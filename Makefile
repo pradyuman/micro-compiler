@@ -22,6 +22,8 @@ lexer:
 run:
 	@java -cp "$(LIB_ANTLR):$(CLASS_PATH)" \
 	Micro ${FILE}.micro > ${FILE}.scanner
+check:
+	diff -b -B ${FILE}.out ${FILE}.scanner
 clean:
 	rm -rf classes build
 

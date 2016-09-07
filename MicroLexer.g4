@@ -15,11 +15,11 @@ KEYWORD
 
 OPERATOR : [+\-*/=<>(),;] | ':=' | '!=' | '<=' | '>=' ;
  
-IDENTIFIER : LETTER (LETTER | DIGIT)* {checkLength(getText().length(), 30)}?;
+IDENTIFIER : LETTER (LETTER | DIGIT)* ; // {checkLength(getText().length(), 30)}?;
 
 INTLITERAL : DIGIT+ ;
 FLOATLITERAL: DIGIT* DOT DIGIT+ ;
-STRINGLITERAL: DQ (EOS|.)*? DQ {checkLength(getText().length(), 80)}?;
+STRINGLITERAL: DQ (EOS|.)*? DQ ; // {checkLength(getText().length(), 80)}?;
 
 WHITESPACE : [ \t\r\n]+ -> skip ;
 COMMENT : '--' ~[\r\n]* -> skip ;

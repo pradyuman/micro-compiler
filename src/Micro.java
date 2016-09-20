@@ -2,15 +2,30 @@ import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.tree.*;
 
 public class Micro {
+
+    public static class MicroFailFastLexer extends MicroLexer {
+
+        public MicroFailFastLexer(CharStream input) { super(input); }
+
+        public void recover(LexerNoViableAltException e) {
+            throw new MicroException(e);
+        }
+
+    }
+
     public static void main(String[] args) throws Exception {
         ANTLRFileStream input = new ANTLRFileStream(args[0]);
-        MicroLexer lexer = new MicroLexer(input);
 
-        Vocabulary v = lexer.getVocabulary();
-        for (Token token = lexer.nextToken(); token.getType() != Token.EOF;
-             token = lexer.nextToken()) {
-            System.out.println("Token Type: " + v.getSymbolicName(token.getType()));
-            System.out.println("Value: " + token.getText());
+        try {
+            MicroFailFastLexer lexer = new MicroFailFastLexer(input);
+            CommonTokenStream tokens = new CommonTokenStream(lexer);
+            MicroParser parser = new MicroParser(tokens);
+            parser.setErrorHandler(new MicroErrorStrategy());
+            parser.program();
+            System.out.println("Accepted");
+        } catch (MicroException e) {
+            System.out.println("Not Accepted");
         }
     }
+
 }

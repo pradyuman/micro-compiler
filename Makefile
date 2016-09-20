@@ -1,5 +1,5 @@
 LIB_ANTLR := lib/antlr.jar
-ANTLR_SCRIPT := MicroLexer.g4
+ANTLR_SCRIPT := Micro.g4
 CLASS_PATH := classes/
 
 all: group compiler
@@ -21,9 +21,11 @@ lexer:
 	org.antlr.v4.gui.TestRig Micro tokens -tokens
 run:
 	@java -cp "$(LIB_ANTLR):$(CLASS_PATH)" \
-	Micro ${FILE}.micro > ${FILE}.scanner
+	Micro testcases/input/${FILE}.micro > ${FILE}.scanner
 check:
-	diff -b -B ${FILE}.out ${FILE}.scanner
+	diff -b -B testcases/output/${FILE}.out ${FILE}.scanner
+testall:
+	./scripts/testall.sh
 clean:
 	rm -rf classes build
 

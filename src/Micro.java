@@ -21,8 +21,11 @@ public class Micro {
             CommonTokenStream tokens = new CommonTokenStream(lexer);
             MicroParser parser = new MicroParser(tokens);
             parser.setErrorHandler(new MicroErrorStrategy());
-            parser.program();
-            System.out.println("Accepted");
+
+            MicroParser.ProgramContext microProgramContext = parser.program();
+            ParseTreeWalker walker = new ParseTreeWalker();
+            MicroCustomListener listener = new MicroCustomListener();
+            walker.walk(listener, microProgramContext);
         } catch (MicroException e) {
             System.out.println("Not Accepted");
         }

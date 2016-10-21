@@ -1,6 +1,6 @@
 #! /bin/sh
 
-curl -O https://engineering.purdue.edu/EE468/project/step2/testcases.tar.gz
+curl -O https://engineering.purdue.edu/EE468/project/step3/testcases.tar.gz
 tar -xf testcases.tar.gz
 
 for file in `ls testcases/input`

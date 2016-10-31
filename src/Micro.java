@@ -27,7 +27,7 @@ public class Micro {
             MicroCustomListener listener = new MicroCustomListener();
             walker.walk(listener, microProgramContext);
         } catch (MicroException e) {
-            System.out.println("Not Accepted");
+            System.out.println(e.getMessage());
         }
     }
 

@@ -17,4 +17,4 @@ done
 
 rm testcases.tar.gz
 rm -rf testcases
-rm *.scanner
+rm *.test

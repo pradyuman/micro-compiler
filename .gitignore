@@ -16,7 +16,6 @@ build
 classes
 gen
 out
-tiny
 .idea
 *.iml
 *.micro

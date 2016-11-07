@@ -23,8 +23,6 @@ check:
 download:
 	curl -O https://engineering.purdue.edu/EE468/project/step$(s)/testcases.tar.gz
 	tar -xvzf testcases.tar.gz
-tiny:
-	cd lib && g++ -o tiny tiny.c
 run-tiny:
 	lib/tiny $(FILE)
 test: run check

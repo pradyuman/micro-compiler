@@ -28,11 +28,12 @@ public class MicroCustomListener extends MicroBaseListener {
 
     @Override
     public void enterString_decl(MicroParser.String_declContext ctx) {
+        String name = ctx.getChild(1).getText();
         symbolTables
             .get(symbolTables.size()-1)
-            .append(new SymbolTable.Variable(ctx.getChild(1).getText(),
-                                             SymbolTable.Variable.Type.STRING,
-                                             ctx.getChild(3).getText()));
+            .put(name, new SymbolTable.Variable(name,
+                    SymbolTable.Variable.Type.STRING,
+                    ctx.getChild(3).getText()));
     }
 
     @Override
@@ -43,18 +44,19 @@ public class MicroCustomListener extends MicroBaseListener {
         for (String s : ctx.getChild(1).getText().split(",")) {
             symbolTables
                 .get(symbolTables.size()-1)
-                .append(new SymbolTable.Variable(s, type));
+                .put(s, new SymbolTable.Variable(s, type));
         }
     }
 
     @Override
     public void enterParam_decl(MicroParser.Param_declContext ctx) {
+        String name = ctx.getChild(1).getText();
         String rawtype = ctx.getChild(0).getText();
         SymbolTable.Variable.Type type = SymbolTable.Variable.Type.valueOf(rawtype);
 
         symbolTables
             .get(symbolTables.size()-1)
-            .append(new SymbolTable.Variable(ctx.getChild(1).getText(), type));
+            .put(name, new SymbolTable.Variable(name, type));
     }
 
     @Override

@@ -1,9 +1,6 @@
 import java.lang.StringBuilder;
-import java.util.ArrayList;
-import java.util.List;
-
-import org.antlr.v4.runtime.*;
-import org.antlr.v4.runtime.tree.*;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 public class SymbolTable {
 
@@ -40,11 +37,11 @@ public class SymbolTable {
     }
 
     private String name;
-    private List<Variable> variables;
+    private Map<String,Variable> variables;
 
     public SymbolTable(String name) {
         this.name = name;
-        this.variables = new ArrayList<Variable>();
+        this.variables = new LinkedHashMap<>();
     }
 
     @Override
@@ -52,24 +49,19 @@ public class SymbolTable {
         StringBuilder b = new StringBuilder();
 
         b.append("Symbol table ").append(name).append("\n");
-        for (Variable v: variables) {
-            b.append(v.toString()).append("\n");
+        for (Map.Entry<String,Variable> v: variables.entrySet()) {
+            b.append(v.getValue().toString()).append("\n");
         }
 
         return b.toString();
     }
 
-    public void append(Variable v) {
-        if (isInTable(v.name)) {
+    public void put(String name, Variable v) {
+        if (variables.containsKey(v.name)) {
             throw new MicroException("DECLARATION ERROR " + v.name);
         }
 
-        variables.add(v);
-    }
-
-    // Checks if a variable with name 's' exists in the table
-    public boolean isInTable(String s) {
-        return variables.stream().anyMatch((v) -> v.name.equals(s));
+        variables.put(name, v);
     }
 
 }

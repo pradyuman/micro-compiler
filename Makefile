@@ -11,7 +11,7 @@ compiler:
 	java -cp $(LIB_ANTLR) org.antlr.v4.Tool -o build $(ANTLR_SCRIPT)
 	rm -rf classes
 	mkdir classes
-	javac -cp $(LIB_ANTLR) -d classes src/*.java build/*.java
+	javac -Xlint:unchecked -cp $(LIB_ANTLR) -d classes src/*.java build/*.java
 lexer:
 	@java -cp "$(LIB_ANTLR):$(CLASS_PATH)" \
 	org.antlr.v4.gui.TestRig Micro tokens -tokens

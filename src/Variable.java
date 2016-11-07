@@ -1,4 +1,4 @@
-public class Variable {
+public class Variable<T> {
 
     public enum Type {
         INT, FLOAT, STRING
@@ -7,9 +7,9 @@ public class Variable {
     private boolean constant;
     private String name;
     private Type type;
-    private String value;
+    private T value;
 
-    public Variable(Type type, String value) {
+    public Variable(Type type, T value) {
         this.constant = true;
         this.type = type;
         this.value = value;
@@ -20,7 +20,7 @@ public class Variable {
         this.type = type;
     }
 
-    public Variable(String name, Type type, String value) {
+    public Variable(String name, Type type, T value) {
         this.name = name;
         this.type = type;
         this.value = value;
@@ -47,7 +47,7 @@ public class Variable {
         return name;
     }
 
-    public String getValue() {
+    public T getValue() {
         return value;
     }
 }

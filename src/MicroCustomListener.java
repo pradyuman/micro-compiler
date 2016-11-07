@@ -1,5 +1,4 @@
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Stack;
 
@@ -29,6 +28,11 @@ public class MicroCustomListener extends MicroBaseListener {
 
     @Override
     public void exitPgm_body(MicroParser.Pgm_bodyContext ctx) {
+        /*
+        for (SymbolMap m : symbolMaps) {
+            System.out.println(m);
+        }
+        */
         for (IR.Node n : ir) {
             System.out.println(";" + n);
         }
@@ -37,11 +41,8 @@ public class MicroCustomListener extends MicroBaseListener {
     @Override
     public void enterString_decl(MicroParser.String_declContext ctx) {
         String name = ctx.getChild(1).getText();
-        symbolMaps
-            .get(symbolMaps.size()-1)
-            .put(name, new Variable(name,
-                    Variable.Type.STRING,
-                    ctx.getChild(3).getText()));
+        Variable<String> var = new Variable<>(name, Variable.Type.STRING, ctx.getChild(3).getText());
+        symbolMaps.get(symbolMaps.size()-1).put(name, var);
     }
 
     @Override
@@ -113,7 +114,19 @@ public class MicroCustomListener extends MicroBaseListener {
 
     @Override
     public void enterAssign_expr(MicroParser.Assign_exprContext ctx) {
-        // (TODO) Do some error checking to make sure var is declared
+        String id = ctx.getChild(0).getText();
+        Variable var = symbolMaps.get(scope.peek()).get(id);
+        for (int i = scope.size()-2; i >= 0 && var == null; i--) {
+            var = symbolMaps.get(scope.get(i)).get(id);
+        }
+        // (TODO) Do some better error checking for var == null (throw exception)
+        if (var == null) return;
+        System.out.println(var);
+        System.out.println(ctx.getChild(2).getText());
+        for (Utils.Token t : Utils.tokenizeExpr(ctx.getChild(2).getText())) {
+            System.out.print(t.getValue() + " ");
+        }
+        System.out.println();
     }
 
     @Override

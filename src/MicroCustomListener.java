@@ -1,50 +1,56 @@
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
-
-import org.antlr.v4.runtime.*;
-import org.antlr.v4.runtime.tree.*;
+import java.util.Stack;
 
 public class MicroCustomListener extends MicroBaseListener {
 
-    private List<SymbolTable> symbolTables;
     private int blocknum;
+    private List<IR.Node> ir;
+    private Stack<Integer> scope;
+    private List<SymbolMap> symbolMaps;
 
     public MicroCustomListener() {
-        this.symbolTables = new ArrayList<SymbolTable>();
         this.blocknum = 1;
+        this.ir = new IR();
+        this.scope = new Stack<>();
+        this.symbolMaps = new ArrayList<>();
+    }
+
+    private SymbolMap lastMap() {
+        return symbolMaps.get(symbolMaps.size()-1);
     }
 
     @Override
     public void enterPgm_body(MicroParser.Pgm_bodyContext ctx) {
-        symbolTables.add(new SymbolTable("GLOBAL"));
+        scope.push(0);
+        symbolMaps.add(new SymbolMap("GLOBAL"));
     }
 
     @Override
     public void exitPgm_body(MicroParser.Pgm_bodyContext ctx) {
-        for (SymbolTable s : symbolTables) {
-            System.out.println(s);
+        for (IR.Node n : ir) {
+            System.out.println(";" + n);
         }
     }
 
     @Override
     public void enterString_decl(MicroParser.String_declContext ctx) {
         String name = ctx.getChild(1).getText();
-        symbolTables
-            .get(symbolTables.size()-1)
-            .put(name, new SymbolTable.Variable(name,
-                    SymbolTable.Variable.Type.STRING,
+        symbolMaps
+            .get(symbolMaps.size()-1)
+            .put(name, new Variable(name,
+                    Variable.Type.STRING,
                     ctx.getChild(3).getText()));
     }
 
     @Override
     public void enterVar_decl(MicroParser.Var_declContext ctx) {
         String rawtype = ctx.getChild(0).getText();
-        SymbolTable.Variable.Type type = SymbolTable.Variable.Type.valueOf(rawtype);
+        Variable.Type type = Variable.Type.valueOf(rawtype);
 
         for (String s : ctx.getChild(1).getText().split(",")) {
-            symbolTables
-                .get(symbolTables.size()-1)
-                .put(s, new SymbolTable.Variable(s, type));
+            lastMap().put(s, new Variable(s, type));
         }
     }
 
@@ -52,40 +58,90 @@ public class MicroCustomListener extends MicroBaseListener {
     public void enterParam_decl(MicroParser.Param_declContext ctx) {
         String name = ctx.getChild(1).getText();
         String rawtype = ctx.getChild(0).getText();
-        SymbolTable.Variable.Type type = SymbolTable.Variable.Type.valueOf(rawtype);
-
-        symbolTables
-            .get(symbolTables.size()-1)
-            .put(name, new SymbolTable.Variable(name, type));
+        Variable.Type type = Variable.Type.valueOf(rawtype);
+        lastMap().put(name, new Variable(name, type));
     }
 
     @Override
     public void enterFunc_decl(MicroParser.Func_declContext ctx) {
-        symbolTables.add(new SymbolTable(ctx.getChild(2).getText()));
+        symbolMaps.add(new SymbolMap(ctx.getChild(2).getText()));
+        scope.push(symbolMaps.size()-1);
+    }
+
+    @Override
+    public void exitFunc_decl(MicroParser.Func_declContext ctx) {
+        scope.pop();
     }
 
     @Override
     public void enterIf_stmt(MicroParser.If_stmtContext ctx) {
-        symbolTables.add(new SymbolTable("BLOCK " + blocknum));
+        symbolMaps.add(new SymbolMap("BLOCK " + blocknum));
+        scope.push(symbolMaps.size()-1);
         blocknum++;
     }
 
     @Override
     public void exitIf_stmt(MicroParser.If_stmtContext ctx) {
-        symbolTables.remove(symbolTables.size()-1);
+        symbolMaps.remove(symbolMaps.size()-1);
+        scope.pop();
         blocknum--;
     }
 
     @Override
     public void enterElse_part(MicroParser.Else_partContext ctx) {
-        symbolTables.add(new SymbolTable("BLOCK " + blocknum));
+        symbolMaps.add(new SymbolMap("BLOCK " + blocknum));
+        scope.push(symbolMaps.size()-1);
         blocknum++;
     }
 
     @Override
+    public void exitElse_part(MicroParser.Else_partContext ctx) {
+        scope.pop();
+    }
+
+    @Override
     public void enterDo_while_stmt(MicroParser.Do_while_stmtContext ctx) {
-        symbolTables.add(new SymbolTable("BLOCK " + blocknum));
+        symbolMaps.add(new SymbolMap("BLOCK " + blocknum));
+        scope.push(symbolMaps.size()-1);
         blocknum++;
+    }
+
+    @Override
+    public void exitDo_while_stmt(MicroParser.Do_while_stmtContext ctx) {
+        scope.pop();
+    }
+
+    @Override
+    public void enterAssign_expr(MicroParser.Assign_exprContext ctx) {
+        // (TODO) Do some error checking to make sure var is declared
+    }
+
+    @Override
+    public void enterRead_stmt(MicroParser.Read_stmtContext ctx) {
+        for (String s : ctx.getChild(2).getText().split(",")) {
+            Variable var = symbolMaps.get(scope.peek()).get(s);
+            for (int i = scope.size()-2; i >= 0 && var == null; i--) {
+                var = symbolMaps.get(scope.get(i)).get(s);
+            }
+            // (TODO) Do some better error checking for var == null (throw exception)
+            if (var == null) return;
+            IR.Opcode opcode = var.isInt() ? IR.Opcode.READI : IR.Opcode.READF;
+            ir.add(new IR.Node(opcode, var));
+        }
+    }
+
+    @Override
+    public void enterWrite_stmt(MicroParser.Write_stmtContext ctx) {
+        for (String s : ctx.getChild(2).getText().split(",")) {
+            Variable var = symbolMaps.get(scope.peek()).get(s);
+            for (int i = scope.size()-2; i >= 0 && var == null; i--) {
+                var = symbolMaps.get(scope.get(i)).get(s);
+            }
+            // (TODO) Do some error checking for var == null (throw exception)
+            if (var == null) return;
+            IR.Opcode opcode = var.isInt() ? IR.Opcode.WRITEI : IR.Opcode.WRITEF;
+            ir.add(new IR.Node(opcode, var));
+        }
     }
 
 }

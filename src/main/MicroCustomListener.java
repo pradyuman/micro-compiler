@@ -1,3 +1,8 @@
+package main;
+
+import main.utils.Expression;
+import main.utils.TinyTranslator;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
@@ -40,6 +45,8 @@ public class MicroCustomListener extends MicroBaseListener {
     public void exitPgm_body(MicroParser.Pgm_bodyContext ctx) {
         //symbolMaps.forEach(m -> System.out.println(m));
         ir.forEach(n -> System.out.println(";" + n));
+        TinyTranslator tt = new TinyTranslator();
+        tt.printTinyFromIR(symbolMaps, ir);
     }
 
     @Override
@@ -122,26 +129,26 @@ public class MicroCustomListener extends MicroBaseListener {
         // (TODO) Do some better error checking for var == null (throw exception)
         if (var == null) return;
 
-        List<ExpressionUtils.Token> infix = ExpressionUtils.tokenizeExpr(ctx.getChild(2).getText());
-        infix.add(0, new ExpressionUtils.Operator(":="));
-        infix.add(0, new ExpressionUtils.Token(ExpressionUtils.Token.Type.VAR, var.getName()));
-        List<ExpressionUtils.Token> postfix = ExpressionUtils.transformToPostfix(infix);
-        ExpressionUtils.BENode tree = ExpressionUtils.generateExpressionTree(postfix);
+        List<Expression.Token> infix = Expression.tokenizeExpr(ctx.getChild(2).getText());
+        infix.add(0, new Expression.Operator(":="));
+        infix.add(0, new Expression.Token(Expression.Token.Type.VAR, var.getName()));
+        List<Expression.Token> postfix = Expression.transformToPostfix(infix);
+        Expression.BENode tree = Expression.generateExpressionTree(postfix);
 
         tree.forEach(n -> {
             if (n.getToken().isOperator()) {
                 IR.Opcode opcode;
                 Variable op1, op2;
-                ExpressionUtils.Token token;
-                ExpressionUtils.Operator operator = (ExpressionUtils.Operator)n.getToken();
+                Expression.Token token;
+                Expression.Operator operator = (Expression.Operator)n.getToken();
                 if (operator.getValue() != ":=") {
                     operator.setRegister(register++);
                 }
 
                 token = n.getLeft().getToken();
                 if (token.isOperator()) {
-                    ExpressionUtils.Operator top = (ExpressionUtils.Operator)token;
-                    op1 = new Variable("$T" + top.getRegister(), var.getType(), null);
+                    Expression.Operator top = (Expression.Operator)token;
+                    op1 = new Variable("$T" + top.getRegister(), var.getType(), true);
                 } else {
                     op1 = resolveId(token.getValue());
                 }
@@ -149,15 +156,15 @@ public class MicroCustomListener extends MicroBaseListener {
                 if (op1 == null) return;
                 if (op1.isConstant()) {
                     opcode = var.isInt() ? IR.Opcode.STOREI : IR.Opcode.STOREF;
-                    Variable temp = new Variable("$T" + register++, op1.getType(), op1.getValue());
+                    Variable temp = new Variable("$T" + register++, op1.getType(), true);
                     ir.add(new IR.Node(opcode, op1, temp));
                     op1 = temp;
                 }
 
                 token = n.getRight().getToken();
                 if (token.isOperator()) {
-                    ExpressionUtils.Operator top = (ExpressionUtils.Operator)token;
-                    op2 = new Variable("$T" + top.getRegister(), var.getType(), null);
+                    Expression.Operator top = (Expression.Operator)token;
+                    op2 = new Variable("$T" + top.getRegister(), var.getType(), true);
                 } else {
                     op2 = resolveId(token.getValue());
                 }
@@ -165,7 +172,7 @@ public class MicroCustomListener extends MicroBaseListener {
                 if (op2 == null) return;
                 if (op2.isConstant()) {
                     opcode = var.isInt() ? IR.Opcode.STOREI : IR.Opcode.STOREF;
-                    Variable temp = new Variable("$T" + register++, op2.getType(), op2.getValue());
+                    Variable temp = new Variable("$T" + register++, op2.getType(), true);
                     ir.add(new IR.Node(opcode, op2, temp));
                     op2 = temp;
                 }
@@ -179,22 +186,22 @@ public class MicroCustomListener extends MicroBaseListener {
                     case "+":
                         opcode = var.isInt() ? IR.Opcode.ADDI : IR.Opcode.ADDF;
                         ir.add(new IR.Node(opcode, op1, op2,
-                                new Variable("$T" + operator.getRegister(), var.getType(), null)));
+                                new Variable("$T" + operator.getRegister(), var.getType(), true)));
                         break;
                     case "-":
                         opcode = var.isInt() ? IR.Opcode.SUBI : IR.Opcode.SUBF;
                         ir.add(new IR.Node(opcode, op1, op2,
-                                new Variable("$T" + operator.getRegister(), var.getType(), null)));
+                                new Variable("$T" + operator.getRegister(), var.getType(), true)));
                         break;
                     case "*":
                         opcode = var.isInt() ? IR.Opcode.MULTI : IR.Opcode.MULTF;
                         ir.add(new IR.Node(opcode, op1, op2,
-                                new Variable("$T" + operator.getRegister(), var.getType(), null)));
+                                new Variable("$T" + operator.getRegister(), var.getType(), true)));
                         break;
                     case "/":
                         opcode = var.isInt() ? IR.Opcode.DIVI : IR.Opcode.DIVF;
                         ir.add(new IR.Node(opcode, op1, op2,
-                                new Variable("$T" + operator.getRegister(), var.getType(), null)));
+                                new Variable("$T" + operator.getRegister(), var.getType(), true)));
                         break;
                 }
             }

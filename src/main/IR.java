@@ -1,3 +1,5 @@
+package main;
+
 import java.util.LinkedList;
 
 /**
@@ -48,6 +50,22 @@ public class IR extends LinkedList<IR.Node> {
             if (op1 != null) s += op1.isConstant() ? op1.getValue() + " " : op1.getName() + " ";
             if (op2 != null) s += op2.isConstant() ? op2.getValue() + " " : op2.getName() + " ";
             return s + focus.getName();
+        }
+
+        public Opcode getOpcode() {
+            return opcode;
+        }
+
+        public Variable getOp1() {
+            return op1;
+        }
+
+        public Variable getOp2() {
+            return op2;
+        }
+
+        public Variable getFocus() {
+            return focus;
         }
 
     }

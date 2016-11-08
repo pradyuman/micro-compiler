@@ -1,6 +1,7 @@
+package main;
+
 import java.lang.StringBuilder;
 import java.util.LinkedHashMap;
-import java.util.Map;
 
 public final class SymbolMap extends LinkedHashMap<String, Variable> {
 

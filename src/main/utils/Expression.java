@@ -1,8 +1,10 @@
+package main.utils;
+
 import java.util.*;
 
-public final class ExpressionUtils {
+public final class Expression {
 
-    private ExpressionUtils() {}
+    private Expression() {}
 
     public static class Token {
 

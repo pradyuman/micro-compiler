@@ -7,17 +7,17 @@ group:
 	@echo "Pradyuman Vig (pvig)  Tiger Cheng (tigerc)"
 compiler:
 	rm -rf build
-	mkdir build
-	java -cp $(LIB_ANTLR) org.antlr.v4.Tool -o build $(ANTLR_SCRIPT)
+	mkdir -p build/main
+	java -cp $(LIB_ANTLR) org.antlr.v4.Tool -o build/main -package main $(ANTLR_SCRIPT)
 	rm -rf classes
-	mkdir classes
-	javac -Xlint:unchecked -cp $(LIB_ANTLR) -d classes src/*.java build/*.java
+	mkdir -p classes
+	javac -cp $(LIB_ANTLR) -d classes src/main/*.java src/main/utils/*.java build/main/*.java
 lexer:
 	@java -cp "$(LIB_ANTLR):$(CLASS_PATH)" \
-	org.antlr.v4.gui.TestRig Micro tokens -tokens
+	org.antlr.v4.gui.TestRig main.Micro tokens -tokens
 run:
 	@java -cp "$(LIB_ANTLR):$(CLASS_PATH)" \
-	Micro testcases/input/$(FILE).micro > $(FILE).test
+	main.Micro testcases/input/$(FILE).micro > $(FILE).test
 check:
 	diff -b -B testcases/output/$(FILE).out $(FILE).test
 download:

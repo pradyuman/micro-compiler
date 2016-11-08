@@ -1,3 +1,5 @@
+package main;
+
 public final class Variable {
 
     public enum Type {
@@ -5,6 +7,7 @@ public final class Variable {
     }
 
     private boolean constant;
+    private boolean temp;
     private String name;
     private Type type;
     private String value;
@@ -21,6 +24,13 @@ public final class Variable {
         this.value = value;
     }
 
+    public Variable(String name, Type type, boolean temp) {
+        this.name = name;
+        this.type = type;
+        this.temp = temp;
+    }
+
+
     @Override
     public String toString() {
         String s = String.format("name %s type %s", name, type);
@@ -36,6 +46,10 @@ public final class Variable {
 
     public boolean isInt() {
         return type == Type.INT;
+    }
+
+    public boolean isTemp() {
+        return temp;
     }
 
     public String getName() {

@@ -123,9 +123,11 @@ public class MicroCustomListener extends MicroBaseListener {
         if (var == null) return;
         System.out.println(var);
         System.out.println(ctx.getChild(2).getText());
-        for (Utils.Token t : Utils.tokenizeExpr(ctx.getChild(2).getText())) {
-            System.out.print(t.getValue() + " ");
-        }
+        List<Utils.Token> infix = Utils.tokenizeExpr(ctx.getChild(2).getText());
+        infix.forEach(t -> System.out.print(t.getValue() + " "));
+        System.out.println();
+        List<Utils.Token> postfix = Utils.transformToPostfix(infix);
+        postfix.forEach(t -> System.out.print(t.getValue() + " "));
         System.out.println();
     }
 

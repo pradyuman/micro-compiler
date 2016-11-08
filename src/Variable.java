@@ -1,4 +1,4 @@
-public class Variable<T> {
+public final class Variable<T> {
 
     public enum Type {
         INT, FLOAT, STRING

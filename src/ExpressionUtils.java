@@ -1,10 +1,8 @@
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Stack;
+import java.util.*;
 
-public class Utils {
+public final class ExpressionUtils {
 
-    private Utils() {}
+    private ExpressionUtils() {}
 
     public static class Token {
 
@@ -33,7 +31,7 @@ public class Utils {
 
         @Override
         public String toString() {
-            return String.format("TYPE: %s | VALUE: %s", type, value);
+            return String.format("%s: %s", type, value);
         }
 
         public String getValue() {
@@ -53,7 +51,7 @@ public class Utils {
         }
     }
 
-    public static class Operator extends Token {
+    public static final class Operator extends Token {
 
         private int precedence;
 
@@ -69,6 +67,70 @@ public class Utils {
         public boolean isHigherPrecedence(Operator t) {
             return precedence > t.getPrecedence();
         }
+    }
+
+    public static final class TreeNode implements Iterable<TreeNode> {
+
+        private Token value;
+        private TreeNode left;
+        private TreeNode right;
+        private List<TreeNode> inorder;
+
+        public TreeNode(Token value) {
+            super();
+            this.value = value;
+        }
+
+        public Token getValue() {
+            return value;
+        }
+
+        public TreeNode getLeft() {
+            return left;
+        }
+
+        public void setLeft(TreeNode node) {
+            this.left = node;
+        }
+
+        public TreeNode getRight() {
+            return right;
+        }
+
+        public void setRight(TreeNode node) {
+            this.right = node;
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder b = new StringBuilder();
+            forEach(n -> b.append(n.getValue() + " "));
+            return b.toString();
+        }
+
+        @Override
+        public Iterator<TreeNode> iterator() {
+            this.inorder = new LinkedList<>();
+
+            TreeNode temp;
+            TreeNode cur = TreeNode.this;
+            Stack<TreeNode> stack = new Stack<>();
+
+            while (true) {
+                while (cur != null) {
+                    stack.push(cur);
+                    cur = cur.getLeft();
+                }
+
+                if (stack.empty()) break;
+
+                temp = stack.pop();
+                this.inorder.add(temp);
+                cur = temp.getRight();
+            }
+            return inorder.iterator();
+        }
+
     }
 
     public static List<Token> tokenizeExpr(String expr) {
@@ -129,6 +191,21 @@ public class Utils {
         }
 
         return postfix;
+    }
+
+    public static TreeNode generateExpressionTree(List<Token> postfix) {
+        Stack<TreeNode> stack = new Stack<>();
+        postfix.forEach(t -> {
+           if (!t.isOperator()) {
+               stack.push(new TreeNode(t));
+           } else {
+               TreeNode n = new TreeNode(t);
+               n.setRight(stack.pop());
+               n.setLeft(stack.pop());
+               stack.push(n);
+           }
+        });
+        return stack.pop();
     }
 
 }

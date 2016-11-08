@@ -2,7 +2,7 @@ import java.lang.StringBuilder;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-public class SymbolMap extends LinkedHashMap<String, Variable> {
+public final class SymbolMap extends LinkedHashMap<String, Variable> {
 
     private String name;
 
@@ -14,12 +14,8 @@ public class SymbolMap extends LinkedHashMap<String, Variable> {
     @Override
     public String toString() {
         StringBuilder b = new StringBuilder();
-
         b.append(String.format("Symbol table %s\n", name));
-        for (Map.Entry<String,Variable> v: entrySet()) {
-            b.append(String.format("%s\n", v.getValue().toString()));
-        }
-
+        entrySet().forEach(v -> b.append(String.format("%s\n", v.getValue().toString())));
         return b.toString();
     }
 
@@ -28,7 +24,6 @@ public class SymbolMap extends LinkedHashMap<String, Variable> {
         if (containsKey(v.getName())) {
             throw new MicroException("DECLARATION ERROR " + v.getName());
         }
-
         return super.put(name, v);
     }
 

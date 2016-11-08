@@ -28,14 +28,8 @@ public class MicroCustomListener extends MicroBaseListener {
 
     @Override
     public void exitPgm_body(MicroParser.Pgm_bodyContext ctx) {
-        /*
-        for (SymbolMap m : symbolMaps) {
-            System.out.println(m);
-        }
-        */
-        for (IR.Node n : ir) {
-            System.out.println(";" + n);
-        }
+        //symbolMaps.forEach(m -> System.out.println(m));
+        ir.forEach(n -> System.out.println(";" + n));
     }
 
     @Override
@@ -121,14 +115,10 @@ public class MicroCustomListener extends MicroBaseListener {
         }
         // (TODO) Do some better error checking for var == null (throw exception)
         if (var == null) return;
-        System.out.println(var);
-        System.out.println(ctx.getChild(2).getText());
-        List<Utils.Token> infix = Utils.tokenizeExpr(ctx.getChild(2).getText());
-        infix.forEach(t -> System.out.print(t.getValue() + " "));
-        System.out.println();
-        List<Utils.Token> postfix = Utils.transformToPostfix(infix);
-        postfix.forEach(t -> System.out.print(t.getValue() + " "));
-        System.out.println();
+
+        List<ExpressionUtils.Token> infix = ExpressionUtils.tokenizeExpr(ctx.getChild(2).getText());
+        List<ExpressionUtils.Token> postfix = ExpressionUtils.transformToPostfix(infix);
+        ExpressionUtils.TreeNode tree = ExpressionUtils.generateExpressionTree(postfix);
     }
 
     @Override

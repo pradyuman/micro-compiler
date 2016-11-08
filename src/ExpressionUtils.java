@@ -54,6 +54,7 @@ public final class ExpressionUtils {
     public static final class Operator extends Token {
 
         private int precedence;
+        private int register;
 
         public Operator(String value) {
             super(Type.OPERATOR, value);
@@ -65,71 +66,90 @@ public final class ExpressionUtils {
             return precedence;
         }
 
+        public int getRegister() {
+            return register;
+        }
+
+        public void setRegister(int register) {
+            this.register = register;
+        }
+
         public boolean isHigherPrecedence(Operator t) {
             return precedence > t.getPrecedence();
         }
     }
 
-    public static final class TreeNode implements Iterable<TreeNode> {
+    // Binary Expression Node
+    public static final class BENode implements Iterable<BENode> {
 
-        private Token value;
-        private TreeNode left;
-        private TreeNode right;
-        private List<TreeNode> inorder;
+        private Token token;
+        private BENode left;
+        private BENode right;
+        private List<BENode> postorder;
 
-        public TreeNode(Token value) {
+        public BENode(Token token) {
             super();
-            this.value = value;
+            this.token = token;
         }
 
-        public Token getValue() {
-            return value;
+        public Token getToken() {
+            return token;
         }
 
-        public TreeNode getLeft() {
+        public BENode getLeft() {
             return left;
         }
 
-        public void setLeft(TreeNode node) {
+        public void setLeft(BENode node) {
             this.left = node;
         }
 
-        public TreeNode getRight() {
+        public BENode getRight() {
             return right;
         }
 
-        public void setRight(TreeNode node) {
+        public void setRight(BENode node) {
             this.right = node;
         }
 
         @Override
         public String toString() {
             StringBuilder b = new StringBuilder();
-            forEach(n -> b.append(n.getValue() + " "));
+            forEach(n -> b.append(n.getToken() + " "));
             return b.toString();
         }
 
         @Override
-        public Iterator<TreeNode> iterator() {
-            this.inorder = new LinkedList<>();
+        public Iterator<BENode> iterator() {
 
-            TreeNode temp;
-            TreeNode cur = TreeNode.this;
-            Stack<TreeNode> stack = new Stack<>();
+            this.postorder = new LinkedList<>();
+
+            BENode cur = BENode.this;
+            Stack<BENode> stack = new Stack<>();
 
             while (true) {
                 while (cur != null) {
+                    if (cur.getRight() != null) {
+                        stack.push(cur.getRight());
+                    }
                     stack.push(cur);
                     cur = cur.getLeft();
                 }
 
                 if (stack.empty()) break;
 
-                temp = stack.pop();
-                this.inorder.add(temp);
-                cur = temp.getRight();
+                cur = stack.pop();
+                if (!stack.empty() && cur.getRight() != null && cur.getRight() == stack.peek()) {
+                    stack.pop();
+                    stack.push(cur);
+                    cur = cur.getRight();
+                } else {
+                    this.postorder.add(cur);
+                    cur = null;
+                }
             }
-            return inorder.iterator();
+
+            return postorder.iterator();
         }
 
     }
@@ -194,13 +214,13 @@ public final class ExpressionUtils {
         return postfix;
     }
 
-    public static TreeNode generateExpressionTree(List<Token> postfix) {
-        Stack<TreeNode> stack = new Stack<>();
+    public static BENode generateExpressionTree(List<Token> postfix) {
+        Stack<BENode> stack = new Stack<>();
         postfix.forEach(t -> {
            if (!t.isOperator()) {
-               stack.push(new TreeNode(t));
+               stack.push(new BENode(t));
            } else {
-               TreeNode n = new TreeNode(t);
+               BENode n = new BENode(t);
                n.setRight(stack.pop());
                n.setLeft(stack.pop());
                stack.push(n);

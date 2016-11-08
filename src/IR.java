@@ -18,11 +18,20 @@ public class IR extends LinkedList<IR.Node> {
         private Variable op2;
         private Variable focus;
 
+        // JUMP LABEL READI READF WRITEI WRITEF
         public Node(Opcode opcode, Variable focus) {
             this.opcode = opcode;
             this.focus = focus;
         }
 
+        // STOREI STOREF
+        public Node(Opcode opcode, Variable op1, Variable focus) {
+            this.opcode = opcode;
+            this.op1 = op1;
+            this.focus = focus;
+        }
+
+        // ADDI ADDF SUBI SUBF MULTI MULTF GT GE LT LE NE EQ
         public Node(Opcode opcode,
                     Variable op1,
                     Variable op2,

@@ -1,4 +1,4 @@
-public final class Variable<T> {
+public final class Variable {
 
     public enum Type {
         INT, FLOAT, STRING
@@ -7,20 +7,15 @@ public final class Variable<T> {
     private boolean constant;
     private String name;
     private Type type;
-    private T value;
+    private String value;
 
-    public Variable(Type type, T value) {
+    public Variable(Type type, String value) {
         this.constant = true;
         this.type = type;
         this.value = value;
     }
 
-    public Variable(String name, Type type) {
-        this.name = name;
-        this.type = type;
-    }
-
-    public Variable(String name, Type type, T value) {
+    public Variable(String name, Type type, String value) {
         this.name = name;
         this.type = type;
         this.value = value;
@@ -47,7 +42,21 @@ public final class Variable<T> {
         return name;
     }
 
-    public T getValue() {
+    public Type getType() {
+        return type;
+    }
+
+    public String getValue() {
         return value;
+    }
+
+    public static Variable generateConstant(String id) {
+        if (id.matches("[+-]?[0-9]$"))
+            return new Variable(Variable.Type.INT, id);
+
+        if (id.matches("[+-]?([0-9]*[.])?[0-9]+"))
+            return new Variable(Variable.Type.FLOAT, id);
+
+        return null;
     }
 }

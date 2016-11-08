@@ -22,6 +22,14 @@ public class MicroCustomListener extends MicroBaseListener {
         return symbolMaps.get(symbolMaps.size()-1);
     }
 
+    private Variable getScopedVariable(String id) {
+        Variable var = symbolMaps.get(scope.peek()).get(id);
+        for (int i = scope.size()-2; i >= 0 && var == null; i--) {
+            var = symbolMaps.get(scope.get(i)).get(id);
+        }
+        return var;
+    }
+
     @Override
     public void enterPgm_body(MicroParser.Pgm_bodyContext ctx) {
         scope.push(0);
@@ -37,7 +45,7 @@ public class MicroCustomListener extends MicroBaseListener {
     @Override
     public void enterString_decl(MicroParser.String_declContext ctx) {
         String name = ctx.getChild(1).getText();
-        Variable<String> var = new Variable<>(name, Variable.Type.STRING, ctx.getChild(3).getText());
+        Variable var = new Variable(name, Variable.Type.STRING, ctx.getChild(3).getText());
         symbolMaps.get(symbolMaps.size()-1).put(name, var);
     }
 
@@ -47,7 +55,7 @@ public class MicroCustomListener extends MicroBaseListener {
         Variable.Type type = Variable.Type.valueOf(rawtype);
 
         for (String s : ctx.getChild(1).getText().split(",")) {
-            lastMap().put(s, new Variable(s, type));
+            lastMap().put(s, new Variable(s, type, null));
         }
     }
 
@@ -56,7 +64,7 @@ public class MicroCustomListener extends MicroBaseListener {
         String name = ctx.getChild(1).getText();
         String rawtype = ctx.getChild(0).getText();
         Variable.Type type = Variable.Type.valueOf(rawtype);
-        lastMap().put(name, new Variable(name, type));
+        lastMap().put(name, new Variable(name, type, null));
     }
 
     @Override
@@ -110,11 +118,7 @@ public class MicroCustomListener extends MicroBaseListener {
 
     @Override
     public void enterAssign_expr(MicroParser.Assign_exprContext ctx) {
-        String id = ctx.getChild(0).getText();
-        Variable var = symbolMaps.get(scope.peek()).get(id);
-        for (int i = scope.size()-2; i >= 0 && var == null; i--) {
-            var = symbolMaps.get(scope.get(i)).get(id);
-        }
+        Variable var = getScopedVariable(ctx.getChild(0).getText());
         // (TODO) Do some better error checking for var == null (throw exception)
         if (var == null) return;
 
@@ -122,22 +126,93 @@ public class MicroCustomListener extends MicroBaseListener {
         infix.add(0, new ExpressionUtils.Operator(":="));
         infix.add(0, new ExpressionUtils.Token(ExpressionUtils.Token.Type.VAR, var.getName()));
         List<ExpressionUtils.Token> postfix = ExpressionUtils.transformToPostfix(infix);
-        System.out.println(postfix);
-        ExpressionUtils.TreeNode tree = ExpressionUtils.generateExpressionTree(postfix);
-        System.out.println(tree);
+        ExpressionUtils.BENode tree = ExpressionUtils.generateExpressionTree(postfix);
 
         tree.forEach(n -> {
+            if (n.getToken().isOperator()) {
+                IR.Opcode opcode;
+                Variable op1, op2;
+                ExpressionUtils.Token token;
+                ExpressionUtils.Operator operator = (ExpressionUtils.Operator)n.getToken();
+                if (operator.getValue() != ":=") {
+                    operator.setRegister(register++);
+                }
 
+                token = n.getLeft().getToken();
+                if (token.isOperator()) {
+                    ExpressionUtils.Operator top = (ExpressionUtils.Operator)token;
+                    op1 = new Variable("$T" + top.getRegister(), var.getType(), null);
+                } else {
+                    op1 = resolveId(token.getValue());
+                }
+                // (TODO) Better error - variable does not exist in program (throw exception)
+                if (op1 == null) return;
+                if (op1.isConstant()) {
+                    opcode = var.isInt() ? IR.Opcode.STOREI : IR.Opcode.STOREF;
+                    Variable temp = new Variable("$T" + register++, op1.getType(), op1.getValue());
+                    ir.add(new IR.Node(opcode, op1, temp));
+                    op1 = temp;
+                }
+
+                token = n.getRight().getToken();
+                if (token.isOperator()) {
+                    ExpressionUtils.Operator top = (ExpressionUtils.Operator)token;
+                    op2 = new Variable("$T" + top.getRegister(), var.getType(), null);
+                } else {
+                    op2 = resolveId(token.getValue());
+                }
+                // (TODO) Better error - variable does not exist in program (throw exception)
+                if (op2 == null) return;
+                if (op2.isConstant()) {
+                    opcode = var.isInt() ? IR.Opcode.STOREI : IR.Opcode.STOREF;
+                    Variable temp = new Variable("$T" + register++, op2.getType(), op2.getValue());
+                    ir.add(new IR.Node(opcode, op2, temp));
+                    op2 = temp;
+                }
+
+                // Can strings be operated on?
+                switch (operator.getValue()) {
+                    case ":=":
+                        opcode = var.isInt() ? IR.Opcode.STOREI : IR.Opcode.STOREF;
+                        ir.add(new IR.Node(opcode, op2, var));
+                        break;
+                    case "+":
+                        opcode = var.isInt() ? IR.Opcode.ADDI : IR.Opcode.ADDF;
+                        ir.add(new IR.Node(opcode, op1, op2,
+                                new Variable("$T" + operator.getRegister(), var.getType(), null)));
+                        break;
+                    case "-":
+                        opcode = var.isInt() ? IR.Opcode.SUBI : IR.Opcode.SUBF;
+                        ir.add(new IR.Node(opcode, op1, op2,
+                                new Variable("$T" + operator.getRegister(), var.getType(), null)));
+                        break;
+                    case "*":
+                        opcode = var.isInt() ? IR.Opcode.MULTI : IR.Opcode.MULTF;
+                        ir.add(new IR.Node(opcode, op1, op2,
+                                new Variable("$T" + operator.getRegister(), var.getType(), null)));
+                        break;
+                    case "/":
+                        opcode = var.isInt() ? IR.Opcode.DIVI : IR.Opcode.DIVF;
+                        ir.add(new IR.Node(opcode, op1, op2,
+                                new Variable("$T" + operator.getRegister(), var.getType(), null)));
+                        break;
+                }
+            }
         });
+    }
+
+    private Variable resolveId(String id) {
+        Variable var = getScopedVariable(id);
+        if (var == null) {
+            var = Variable.generateConstant(id);
+        }
+        return var;
     }
 
     @Override
     public void enterRead_stmt(MicroParser.Read_stmtContext ctx) {
         for (String s : ctx.getChild(2).getText().split(",")) {
-            Variable var = symbolMaps.get(scope.peek()).get(s);
-            for (int i = scope.size()-2; i >= 0 && var == null; i--) {
-                var = symbolMaps.get(scope.get(i)).get(s);
-            }
+            Variable var = getScopedVariable(s);
             // (TODO) Do some better error checking for var == null (throw exception)
             if (var == null) return;
             IR.Opcode opcode = var.isInt() ? IR.Opcode.READI : IR.Opcode.READF;
@@ -148,10 +223,7 @@ public class MicroCustomListener extends MicroBaseListener {
     @Override
     public void enterWrite_stmt(MicroParser.Write_stmtContext ctx) {
         for (String s : ctx.getChild(2).getText().split(",")) {
-            Variable var = symbolMaps.get(scope.peek()).get(s);
-            for (int i = scope.size()-2; i >= 0 && var == null; i--) {
-                var = symbolMaps.get(scope.get(i)).get(s);
-            }
+            Variable var = getScopedVariable(s);
             // (TODO) Do some error checking for var == null (throw exception)
             if (var == null) return;
             IR.Opcode opcode = var.isInt() ? IR.Opcode.WRITEI : IR.Opcode.WRITEF;

@@ -31,7 +31,7 @@ public final class ExpressionUtils {
 
         @Override
         public String toString() {
-            return String.format("%s: %s", type, value);
+            return value;
         }
 
         public String getValue() {
@@ -55,9 +55,10 @@ public final class ExpressionUtils {
 
         private int precedence;
 
-        public Operator(Type type, String value) {
-            super(type, value);
-            this.precedence = value.matches("[+-]") ? 1 : 2;
+        public Operator(String value) {
+            super(Type.OPERATOR, value);
+            if (value.equals(":=")) this.precedence = 0;
+            else this.precedence = value.matches("[+-]") ? 1 : 2;
         }
 
         public int getPrecedence() {
@@ -146,7 +147,7 @@ public final class ExpressionUtils {
             }
 
             if (t == Token.Type.OPERATOR) {
-                list.add(new Operator(t, s));
+                list.add(new Operator(s));
             } else {
                 list.add(new Token(t, s));
             }
@@ -159,7 +160,7 @@ public final class ExpressionUtils {
         List<Token> postfix = new LinkedList<>();
         Stack<Token> stack = new Stack<>();
 
-        for (Token t : infix) {
+        infix.forEach(t -> {
             switch (t.getType()) {
                 case VAR:
                     postfix.add(t);
@@ -183,7 +184,7 @@ public final class ExpressionUtils {
                     stack.pop();
                     break;
             }
-        }
+        });
 
         // (TODO) Better error handling: if top of stack is parenthesis then mismatched parentheses
         while (!stack.empty()) {

@@ -5,12 +5,14 @@ import java.util.Stack;
 public class MicroCustomListener extends MicroBaseListener {
 
     private int blocknum;
+    private int register;
     private List<IR.Node> ir;
     private Stack<Integer> scope;
     private List<SymbolMap> symbolMaps;
 
     public MicroCustomListener() {
         this.blocknum = 1;
+        this.register = 1;
         this.ir = new IR();
         this.scope = new Stack<>();
         this.symbolMaps = new ArrayList<>();
@@ -117,8 +119,16 @@ public class MicroCustomListener extends MicroBaseListener {
         if (var == null) return;
 
         List<ExpressionUtils.Token> infix = ExpressionUtils.tokenizeExpr(ctx.getChild(2).getText());
+        infix.add(0, new ExpressionUtils.Operator(":="));
+        infix.add(0, new ExpressionUtils.Token(ExpressionUtils.Token.Type.VAR, var.getName()));
         List<ExpressionUtils.Token> postfix = ExpressionUtils.transformToPostfix(infix);
+        System.out.println(postfix);
         ExpressionUtils.TreeNode tree = ExpressionUtils.generateExpressionTree(postfix);
+        System.out.println(tree);
+
+        tree.forEach(n -> {
+
+        });
     }
 
     @Override

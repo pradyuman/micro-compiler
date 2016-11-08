@@ -18,14 +18,14 @@ public class ExpressionUtilsTest {
         infixOnlyConstants = new LinkedList<>();
         infixOnlyConstants.addAll(Arrays.asList(
                 new ExpressionUtils.Token(ExpressionUtils.Token.Type.VAR, "3"),
-                new ExpressionUtils.Operator(ExpressionUtils.Token.Type.OPERATOR, "+"),
+                new ExpressionUtils.Operator("+"),
                 new ExpressionUtils.Token(ExpressionUtils.Token.Type.VAR, "4"),
-                new ExpressionUtils.Operator(ExpressionUtils.Token.Type.OPERATOR, "*"),
+                new ExpressionUtils.Operator("*"),
                 new ExpressionUtils.Token(ExpressionUtils.Token.Type.VAR, "2"),
-                new ExpressionUtils.Operator(ExpressionUtils.Token.Type.OPERATOR, "/"),
+                new ExpressionUtils.Operator("/"),
                 new ExpressionUtils.Token(ExpressionUtils.Token.Type.LPAREN, "("),
                 new ExpressionUtils.Token(ExpressionUtils.Token.Type.VAR, "1"),
-                new ExpressionUtils.Operator(ExpressionUtils.Token.Type.OPERATOR, "-"),
+                new ExpressionUtils.Operator("-"),
                 new ExpressionUtils.Token(ExpressionUtils.Token.Type.VAR, "5"),
                 new ExpressionUtils.Token(ExpressionUtils.Token.Type.RPAREN, ")")
         ));
@@ -34,14 +34,14 @@ public class ExpressionUtilsTest {
         infixWithVariables = new LinkedList<>();
         infixWithVariables.addAll(Arrays.asList(
                 new ExpressionUtils.Token(ExpressionUtils.Token.Type.VAR, "test"),
-                new ExpressionUtils.Operator(ExpressionUtils.Token.Type.OPERATOR, "+"),
+                new ExpressionUtils.Operator("+"),
                 new ExpressionUtils.Token(ExpressionUtils.Token.Type.VAR, "a"),
-                new ExpressionUtils.Operator(ExpressionUtils.Token.Type.OPERATOR, "*"),
+                new ExpressionUtils.Operator("*"),
                 new ExpressionUtils.Token(ExpressionUtils.Token.Type.VAR, "2"),
-                new ExpressionUtils.Operator(ExpressionUtils.Token.Type.OPERATOR, "/"),
+                new ExpressionUtils.Operator("/"),
                 new ExpressionUtils.Token(ExpressionUtils.Token.Type.LPAREN, "("),
                 new ExpressionUtils.Token(ExpressionUtils.Token.Type.VAR, "1"),
-                new ExpressionUtils.Operator(ExpressionUtils.Token.Type.OPERATOR, "-"),
+                new ExpressionUtils.Operator("-"),
                 new ExpressionUtils.Token(ExpressionUtils.Token.Type.VAR, "5"),
                 new ExpressionUtils.Token(ExpressionUtils.Token.Type.RPAREN, ")")
         ));
@@ -66,12 +66,12 @@ public class ExpressionUtilsTest {
                 new ExpressionUtils.Token(ExpressionUtils.Token.Type.VAR, "3"),
                 new ExpressionUtils.Token(ExpressionUtils.Token.Type.VAR, "4"),
                 new ExpressionUtils.Token(ExpressionUtils.Token.Type.VAR, "2"),
-                new ExpressionUtils.Operator(ExpressionUtils.Token.Type.OPERATOR, "*"),
+                new ExpressionUtils.Operator("*"),
                 new ExpressionUtils.Token(ExpressionUtils.Token.Type.VAR, "1"),
                 new ExpressionUtils.Token(ExpressionUtils.Token.Type.VAR, "5"),
-                new ExpressionUtils.Operator(ExpressionUtils.Token.Type.OPERATOR, "-"),
-                new ExpressionUtils.Operator(ExpressionUtils.Token.Type.OPERATOR, "/"),
-                new ExpressionUtils.Operator(ExpressionUtils.Token.Type.OPERATOR, "+")
+                new ExpressionUtils.Operator("-"),
+                new ExpressionUtils.Operator("/"),
+                new ExpressionUtils.Operator("+")
         ));
         List<ExpressionUtils.Token> actual = ExpressionUtils.transformToPostfix(infixOnlyConstants);
         assertEquals(expected, actual);
@@ -84,12 +84,12 @@ public class ExpressionUtilsTest {
                 new ExpressionUtils.Token(ExpressionUtils.Token.Type.VAR, "test"),
                 new ExpressionUtils.Token(ExpressionUtils.Token.Type.VAR, "a"),
                 new ExpressionUtils.Token(ExpressionUtils.Token.Type.VAR, "2"),
-                new ExpressionUtils.Operator(ExpressionUtils.Token.Type.OPERATOR, "*"),
+                new ExpressionUtils.Operator("*"),
                 new ExpressionUtils.Token(ExpressionUtils.Token.Type.VAR, "1"),
                 new ExpressionUtils.Token(ExpressionUtils.Token.Type.VAR, "5"),
-                new ExpressionUtils.Operator(ExpressionUtils.Token.Type.OPERATOR, "-"),
-                new ExpressionUtils.Operator(ExpressionUtils.Token.Type.OPERATOR, "/"),
-                new ExpressionUtils.Operator(ExpressionUtils.Token.Type.OPERATOR, "+")
+                new ExpressionUtils.Operator("-"),
+                new ExpressionUtils.Operator("/"),
+                new ExpressionUtils.Operator("+")
         ));
         List<ExpressionUtils.Token> actual = ExpressionUtils.transformToPostfix(infixWithVariables);
         assertEquals(expected, actual);

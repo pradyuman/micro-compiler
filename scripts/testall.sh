@@ -1,7 +1,8 @@
 #! /bin/sh
 
-curl -O https://engineering.purdue.edu/EE468/project/step3/testcases.tar.gz
-tar -xf testcases.tar.gz
+curl -O https://engineering.purdue.edu/EE468/project/step5/testcases_step5.tar.gz
+tar -xf testcases_step5.tar.gz
+mv testcases_step5 testcases
 
 for file in `ls testcases/input`
 do
@@ -15,6 +16,6 @@ do
     make check FILE=$(echo "$file" | cut -d"." -f1)
 done
 
-rm testcases.tar.gz
+rm testcases_step5.tar.gz
 rm -rf testcases
 rm *.test

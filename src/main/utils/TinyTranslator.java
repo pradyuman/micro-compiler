@@ -18,9 +18,8 @@ public class TinyTranslator {
 
     public void printTinyFromIR(List<SymbolMap> symbolMaps, List<IR.Node> ir) {
         System.out.println(";tiny code");
-        Set<String> set = new HashSet<>();
-        symbolMaps.forEach(m -> m.keySet().forEach(e -> set.add(e)));
-        set.forEach(e -> System.out.format("var %s\n", e));
+        symbolMaps.stream().flatMap(m -> m.keySet().stream()).distinct()
+                .forEach(e -> System.out.format("var %s\n", e));
         ir.forEach(n -> {
             String op1 = resolveOp(n.getOp1());
             String op2 = resolveOp(n.getOp2());

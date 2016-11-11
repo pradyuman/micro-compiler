@@ -68,6 +68,10 @@ public class IR extends LinkedList<IR.Node> {
             return focus;
         }
 
+        public void setFocus(Variable focus) {
+            this.focus = focus;
+        }
+
     }
 
     public IR() {

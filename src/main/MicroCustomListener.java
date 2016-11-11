@@ -10,16 +10,23 @@ import java.util.Stack;
 public class MicroCustomListener extends MicroBaseListener {
 
     private int blocknum;
+    private int label;
     private int register;
     private List<IR.Node> ir;
     private Stack<Integer> scope;
+    private Stack<Expression.BENode> exprstack;
+    private Stack<Integer> lcstack;
+    private Stack<IR.Node> iejump;
     private List<SymbolMap> symbolMaps;
 
     public MicroCustomListener() {
         this.blocknum = 1;
+        this.label = 1;
         this.register = 1;
         this.ir = new IR();
         this.scope = new Stack<>();
+        this.lcstack = new Stack<>();
+        this.iejump = new Stack<>();
         this.symbolMaps = new ArrayList<>();
     }
 
@@ -43,7 +50,6 @@ public class MicroCustomListener extends MicroBaseListener {
 
     @Override
     public void exitPgm_body(MicroParser.Pgm_bodyContext ctx) {
-        //symbolMaps.forEach(m -> System.out.println(m));
         ir.forEach(n -> System.out.println(";" + n));
         TinyTranslator tt = new TinyTranslator();
         tt.printTinyFromIR(symbolMaps, ir);
@@ -90,20 +96,51 @@ public class MicroCustomListener extends MicroBaseListener {
         symbolMaps.add(new SymbolMap("BLOCK " + blocknum));
         scope.push(symbolMaps.size()-1);
         blocknum++;
+
+        ir.add(new IR.Node(
+                IR.Opcode.EQ,
+                new Variable("label" + label, Variable.Type.STRING, null)
+        ));
+        lcstack.push(label++);
+
+        iejump.push(new IR.Node(IR.Opcode.JUMP, null));
     }
 
     @Override
     public void exitIf_stmt(MicroParser.If_stmtContext ctx) {
-        symbolMaps.remove(symbolMaps.size()-1);
-        scope.pop();
-        blocknum--;
+        System.out.println("EI:" + lcstack);
+        ir.add(new IR.Node(
+                IR.Opcode.LABEL,
+                new Variable("label" + lcstack.peek(), Variable.Type.STRING, null)
+        ));
+        iejump.pop().setFocus(new Variable("label" + lcstack.pop(), Variable.Type.STRING, null));
+        System.out.println("EIN:" + lcstack);
+        System.out.println();
     }
 
     @Override
     public void enterElse_part(MicroParser.Else_partContext ctx) {
+        if (ctx.getChild(0) == null) return;
+
+        System.out.println("EE:" + lcstack);
+        ir.add(iejump.peek());
+        ir.add(new IR.Node(
+                IR.Opcode.LABEL,
+                new Variable("label" + lcstack.pop(), Variable.Type.STRING, null)
+        ));
+        System.out.println("entered_");
         symbolMaps.add(new SymbolMap("BLOCK " + blocknum));
-        scope.push(symbolMaps.size()-1);
+        scope.push(symbolMaps.size() - 1);
         blocknum++;
+
+        lcstack.push(label++);
+        ir.add(new IR.Node(
+                IR.Opcode.NE,
+                new Variable("label" + lcstack.peek(), Variable.Type.STRING, null)
+        ));
+
+        System.out.println("EEN:" + lcstack);
+        System.out.println();
     }
 
     @Override
@@ -116,10 +153,21 @@ public class MicroCustomListener extends MicroBaseListener {
         symbolMaps.add(new SymbolMap("BLOCK " + blocknum));
         scope.push(symbolMaps.size()-1);
         blocknum++;
+
+        ir.add(new IR.Node(
+                IR.Opcode.LABEL,
+                new Variable("label" + label, Variable.Type.STRING, null)
+        ));
+        lcstack.push(label++);
     }
 
     @Override
     public void exitDo_while_stmt(MicroParser.Do_while_stmtContext ctx) {
+        String loopexit = "label" + lcstack.pop();
+        ir.add(new IR.Node(
+                IR.Opcode.GE,
+                new Variable(loopexit, Variable.Type.STRING, null)
+        ));
         scope.pop();
     }
 

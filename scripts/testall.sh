@@ -9,13 +9,17 @@ do
     if [ "$1" = "-v" ]; then
         echo "$file run:"
     fi
-    make run FILE=$(echo "$file" | cut -d"." -f1)
+
+    FILE=$(echo "$file" | cut -d"." -f1)
+    make run FILE=$FILE
     if [ "$1" = "-v" ]; then
         echo "$file check:"
     fi
-    make check FILE=$(echo "$file" | cut -d"." -f1)
+    make run-tiny FILE=$FILE < testcases/input/$FILE.input
+    make check-tiny FILE=$FILE
 done
 
 rm testcases_step5.tar.gz
 rm -rf testcases
 rm *.test
+rm *.tinyout

@@ -17,14 +17,16 @@ lexer:
 	org.antlr.v4.gui.TestRig main.Micro tokens -tokens
 run:
 	@java -cp "$(LIB_ANTLR):$(CLASS_PATH)" \
-	main.Micro $(FILE).micro > $(FILE).test
+	main.Micro testcases/input/$(FILE).micro > $(FILE).test
 check:
 	diff -b -B testcases/output/$(FILE).out $(FILE).test
 download:
 	curl -O https://engineering.purdue.edu/EE468/project/step5/testcases_step5.tar.gz
 	tar -xvzf testcases_step5.tar.gz
 run-tiny:
-	lib/tiny $(FILE)
+	lib/tiny $(FILE).test > $(FILE).tinyout
+check-tiny:
+	bash -c 'diff -b -B <(head -n 1 testcases/output/$(FILE).tinyout) <(head -n 1 $(FILE).tinyout)'
 test: run check
 testall:
 	./scripts/testall.sh

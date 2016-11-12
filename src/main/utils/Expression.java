@@ -12,7 +12,6 @@ public final class Expression {
             VAR, OPERATOR, LPAREN, RPAREN,
         }
 
-
         public static String calcop = "[-+*/()]";
 
         private Type type;
@@ -126,7 +125,6 @@ public final class Expression {
 
         @Override
         public Iterator<BENode> iterator() {
-
             this.postorder = new LinkedList<>();
 
             BENode cur = BENode.this;

@@ -1,5 +1,6 @@
 package main;
 
+import java.util.EnumSet;
 import java.util.LinkedList;
 
 /**
@@ -14,6 +15,27 @@ public class IR extends LinkedList<IR.Node> {
     }
 
     public static class Node {
+
+        public enum Type {
+            CALC, COMP, STORE, JUMP, LABEL, SYS
+        }
+
+        private static EnumSet<Opcode> CalcSet = EnumSet.of(
+                Opcode.ADDI, Opcode.ADDF, Opcode.SUBI, Opcode.SUBF,
+                Opcode.MULTI, Opcode.MULTF, Opcode.DIVI, Opcode.DIVF
+        );
+
+        private static EnumSet<Opcode> CompSet = EnumSet.of(
+                Opcode.GT, Opcode.GE, Opcode.LT, Opcode.LE, Opcode.NE, Opcode.EQ
+        );
+
+        private static EnumSet<Opcode> StoreSet = EnumSet.of(
+                Opcode.STOREI, Opcode.STOREF
+        );
+
+        private static EnumSet<Opcode> SysSet = EnumSet.of(
+                Opcode.READI, Opcode.READF, Opcode.WRITEI, Opcode.WRITEF
+        );
 
         private Opcode opcode;
         private Variable op1;
@@ -50,6 +72,17 @@ public class IR extends LinkedList<IR.Node> {
             if (op1 != null) s += op1.isConstant() ? op1.getValue() + " " : op1.getName() + " ";
             if (op2 != null) s += op2.isConstant() ? op2.getValue() + " " : op2.getName() + " ";
             return s + focus.getName();
+        }
+
+        public Type getType() {
+            if (CalcSet.contains(opcode)) return Type.CALC;
+            if (CompSet.contains(opcode)) return Type.COMP;
+            if (StoreSet.contains(opcode)) return Type.STORE;
+            if (SysSet.contains(opcode)) return Type.SYS;
+            if (opcode == Opcode.JUMP) return Type.JUMP;
+            if (opcode == Opcode.LABEL) return Type.LABEL;
+
+            throw new MicroException(MicroErrorMessages.UnknownIRNodeType);
         }
 
         public Opcode getOpcode() {

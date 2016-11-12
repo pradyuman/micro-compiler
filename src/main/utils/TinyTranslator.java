@@ -8,6 +8,34 @@ import java.util.*;
 
 public class TinyTranslator {
 
+    private static final Map<IR.Opcode, String> dict;
+
+    static {
+        Map<IR.Opcode, String> _dict = new HashMap<>();
+        _dict.put(IR.Opcode.ADDI, "addi");
+        _dict.put(IR.Opcode.ADDF, "addr");
+        _dict.put(IR.Opcode.SUBI, "subi");
+        _dict.put(IR.Opcode.SUBF, "subr");
+        _dict.put(IR.Opcode.MULTI, "muli");
+        _dict.put(IR.Opcode.MULTF, "mulr");
+        _dict.put(IR.Opcode.DIVI, "divi");
+        _dict.put(IR.Opcode.DIVF, "divr");
+        _dict.put(IR.Opcode.GT, "jgt");
+        _dict.put(IR.Opcode.GE, "jge");
+        _dict.put(IR.Opcode.LT, "jlt");
+        _dict.put(IR.Opcode.LE, "jle");
+        _dict.put(IR.Opcode.NE, "jne");
+        _dict.put(IR.Opcode.EQ, "jeq");
+        _dict.put(IR.Opcode.JUMP, "jmp");
+        _dict.put(IR.Opcode.LABEL, "label");
+        _dict.put(IR.Opcode.READI, "sys readi");
+        _dict.put(IR.Opcode.READF, "sys readr");
+        _dict.put(IR.Opcode.WRITEI, "sys writei");
+        _dict.put(IR.Opcode.WRITEF, "sys writer");
+
+        dict = Collections.unmodifiableMap(_dict);
+    }
+
     private int register;
     private Map<String, Integer> map;
 
@@ -24,75 +52,42 @@ public class TinyTranslator {
             String op1 = resolveOp(n.getOp1());
             String op2 = resolveOp(n.getOp2());
             String focus = resolveFocus(n.getFocus());
-            switch (n.getOpcode()) {
-                case ADDI:
-                    System.out.format("move %s r%s\n", op1, register);
-                    System.out.format("addi %s r%s\n", op2, register);
+            String command = dict.get(n.getOpcode());
+
+            switch(n.getType()) {
+                case CALC:
+                    System.out.format("move %s %s\n", op1, focus);
+                    System.out.format("%s %s %s\n", command, op2, focus);
                     break;
-                case ADDF:
-                    System.out.format("move %s r%s\n", op1, register);
-                    System.out.format("addr %s r%s\n", op2, register);
+                case COMP:
+                    String comp = resolveComp(n.getOp1(), n.getOp2());
+                    if (!n.getOp2().isTemp()) {
+                        System.out.format("move %s r%s\n", op2, ++register);
+                        op2 = "r" + register;
+                    }
+                    System.out.format("%s %s %s\n", comp, op1, op2);
+                    System.out.format("%s %s\n", command, focus);
                     break;
-                case SUBI:
-                    System.out.format("move %s r%s\n", op1, register);
-                    System.out.format("subi %s r%s\n", op2, register);
+                case STORE:
+                    if (!n.getOp1().isTemp() && !n.getFocus().isTemp()) {
+                        System.out.format("move %s r%s\n", op1, ++register);
+                        op1 = "r" + register;
+                    }
+                    System.out.format("move %s %s\n", op1, focus);
                     break;
-                case SUBF:
-                    System.out.format("move %s r%s\n", op1, register);
-                    System.out.format("subr %s r%s\n", op2, register);
-                    break;
-                case MULTI:
-                    System.out.format("move %s r%s\n", op1, register);
-                    System.out.format("muli %s r%s\n", op2, register);
-                    break;
-                case MULTF:
-                    System.out.format("move %s r%s\n", op1, register);
-                    System.out.format("mulr %s r%s\n", op2, register);
-                    break;
-                case DIVI:
-                    System.out.format("move %s r%s\n", op1, register);
-                    System.out.format("divi %s r%s\n", op2, register);
-                    break;
-                case DIVF:
-                    System.out.format("move %s r%s\n", op1, register);
-                    System.out.format("divr %s r%s\n", op2, register);
-                    break;
-                case STOREI:
-                case STOREF:
-                   System.out.format("move %s %s\n", op1, focus);
-                   break;
-                case GT:
-                    break;
-                case GE:
-                    break;
-                case LT:
-                    break;
-                case LE:
-                    break;
-                case NE:
-                    break;
-                case EQ:
-                    break;
-                case JUMP:
-                    break;
-                case LABEL:
-                    break;
-                case READI:
-                    System.out.format("sys readi %s\n", focus);
-                    break;
-                case READF:
-                    System.out.format("sys readr %s\n", focus);
-                    break;
-                case WRITEI:
-                    System.out.format("sys writei %s\n", focus);
-                    break;
-                case WRITEF:
-                    System.out.format("sys writer %s\n", focus);
-                    break;
+                default:
+                    System.out.format("%s %s\n", command, focus);
             }
        });
 
-        System.out.format("sys halt\n");
+        System.out.println("sys halt");
+    }
+
+    private String resolveComp(Variable op1, Variable op2) {
+        if ((op1 != null && op1.isFloat()) || (op2 != null && op2.isFloat()))
+            return "cmpr";
+        else
+            return "cmpi";
     }
 
     private String resolveOp(Variable op) {

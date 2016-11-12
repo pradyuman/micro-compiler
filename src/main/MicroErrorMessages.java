@@ -1,12 +1,10 @@
 package main;
 
-/**
- * Created by prady on 11/11/2016.
- */
 public class MicroErrorMessages {
 
-    public static String UndefinedVariable = "Undefined Variable";
-    public static String UnknownCalcOp = "Unknown Calculation Operator";
-    public static String UnknownCompOp = "Unknown Comparison Operator";
+    public static final String UndefinedVariable = "Undefined Variable";
+    public static final String UnknownCalcOp = "Unknown Calculation Operator";
+    public static final String UnknownCompOp = "Unknown Comparison Operator";
+    public static final String UnknownIRNodeType = "Unknown IR Node type";
 
 }

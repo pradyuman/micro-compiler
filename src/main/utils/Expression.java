@@ -12,6 +12,9 @@ public final class Expression {
             VAR, OPERATOR, LPAREN, RPAREN,
         }
 
+
+        public static String calcop = "[-+*/()]";
+
         private Type type;
         private String value;
 
@@ -60,7 +63,7 @@ public final class Expression {
 
         public Operator(String value) {
             super(Type.OPERATOR, value);
-            if (value.equals(":=")) this.precedence = 0;
+            if (value.matches("[<]")) this.precedence = 0;
             else this.precedence = value.matches("[+-]") ? 1 : 2;
         }
 
@@ -158,14 +161,15 @@ public final class Expression {
 
     public static List<Token> tokenizeExpr(String expr) {
         List<Token> list = new LinkedList<>();
-        for (String s : expr.split("((?<=[+\\-*/()])|(?=[+\\-*/()]))")) {
+
+        for (String s : expr.split("(?<=op)|(?=op)".replace("op", Token.calcop))) {
             Token.Type t = Token.Type.VAR;
-            if (s.matches("[+\\-*/]")) {
-                t = Token.Type.OPERATOR;
-            } else if (s.equals("(")) {
+            if (s.equals("(")) {
                 t = Token.Type.LPAREN;
             } else if (s.equals(")")) {
                 t = Token.Type.RPAREN;
+            } else if (s.matches(Token.calcop)) {
+                t = Token.Type.OPERATOR;
             }
 
             if (t == Token.Type.OPERATOR) {

@@ -78,7 +78,7 @@ public class IR extends LinkedList<IR.Node> {
         super();
     }
 
-    public static Opcode parseOperator(String operator, Variable.Type type) {
+    public static Opcode parseCalcOp(String operator, Variable.Type type) {
         switch (operator) {
             case "+":
                 return type == Variable.Type.INT ? Opcode.ADDI : Opcode.ADDF;
@@ -89,7 +89,26 @@ public class IR extends LinkedList<IR.Node> {
             case "/":
                 return type == Variable.Type.INT ? Opcode.DIVI : Opcode.DIVF;
             default:
-                throw new MicroException("Unknown Operator");
+                throw new MicroException(MicroErrorMessages.UnknownCalcOp);
+        }
+    }
+
+    public static Opcode parseCompOp(String operator, boolean opposite) {
+        switch (operator) {
+            case ">":
+                return opposite ? Opcode.LE : Opcode.GT;
+            case ">=":
+                return opposite ? Opcode.LT : Opcode.GE;
+            case "<":
+                return opposite ? Opcode.GE : Opcode.LT;
+            case "<=":
+                return opposite ? Opcode.GT : Opcode.LE;
+            case "!=":
+                return opposite ? Opcode.EQ : Opcode.NE;
+            case "=":
+                return opposite ? Opcode.NE : Opcode.EQ;
+            default:
+                throw new MicroException(MicroErrorMessages.UnknownCompOp);
         }
     }
 

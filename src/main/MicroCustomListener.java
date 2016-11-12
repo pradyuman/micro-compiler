@@ -2,6 +2,7 @@ package main;
 
 import main.utils.Expression;
 import main.utils.TinyTranslator;
+import org.antlr.v4.runtime.tree.ParseTree;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,7 +20,6 @@ public class MicroCustomListener extends MicroBaseListener {
     private int register;
     private List<IR.Node> ir;
     private Stack<Integer> scope;
-    private Stack<Expression.BENode> exprstack;
     private Stack<Integer> lcstack;
     private Stack<IR.Node> iejump;
     private List<SymbolMap> symbolMaps;
@@ -162,11 +162,22 @@ public class MicroCustomListener extends MicroBaseListener {
 
     @Override
     public void exitDo_while_stmt(MicroParser.Do_while_stmtContext ctx) {
-        String loopexit = LABEL_PREFIX + lcstack.pop();
-        ir.add(new IR.Node(
-                IR.Opcode.GE,
-                new Variable(loopexit, Variable.Type.STRING, null)
-        ));
+        ParseTree cond = ctx.getChild(5);
+        Variable target = new Variable(LABEL_PREFIX + lcstack.pop(), Variable.Type.STRING, null);
+
+        switch (cond.getText()) {
+            case "TRUE":
+                ir.add(new IR.Node(IR.Opcode.JUMP, target));
+                break;
+            case "FALSE":
+                break;
+            default:
+                Variable left = parseExpr(cond.getChild(0).getText());
+                Variable right = parseExpr(cond.getChild(2).getText());
+                IR.Opcode opcode = IR.parseCompOp(cond.getChild(1).getText(), false);
+                ir.add(new IR.Node(opcode, left, right, target));
+                break;
+        }
         scope.pop();
     }
 
@@ -176,19 +187,25 @@ public class MicroCustomListener extends MicroBaseListener {
         if (var == null)
             throw new MicroException(MicroErrorMessages.UndefinedVariable);
 
-        parseExpr(ctx.getChild(2).getText());
+
+        Variable focus = parseExpr(ctx.getChild(2).getText());
         IR.Opcode opcode = var.isInt() ? IR.Opcode.STOREI : IR.Opcode.STOREF;
-        ir.add(new IR.Node(opcode, ir.get(ir.size()-1).getFocus(), var));
+        ir.add(new IR.Node(opcode, focus, var));
     }
 
-    public void parseExpr(String expr) {
+    // Returns last relevant variable on IR
+    public Variable parseExpr(String expr) {
+        Variable var = getScopedVariable(expr);
+        if (var != null)
+            return var;
+
         List<Expression.Token> infix = Expression.tokenizeExpr(expr);
         List<Expression.Token> postfix = Expression.transformToPostfix(infix);
         Expression.BENode tree = Expression.generateExpressionTree(postfix);
 
         // Expression is a single constant
         if (!tree.getToken().isOperator())
-            resolveToken(tree.getToken());
+            return resolveToken(tree.getToken());
 
         // Expression includes an operator
         tree.forEach(n -> {
@@ -200,9 +217,11 @@ public class MicroCustomListener extends MicroBaseListener {
                 Variable op2 = resolveToken(n.getRight().getToken());
                 Variable.Type exprType = op1.isFloat() || op2.isFloat() ? Variable.Type.FLOAT : Variable.Type.INT;
                 Variable result = new Variable(TEMPREG_PREFIX + operator.getRegister(), exprType, true);
-                ir.add(new IR.Node(IR.parseOperator(operator.getValue(), exprType), op1, op2, result));
+                ir.add(new IR.Node(IR.parseCalcOp(operator.getValue(), exprType), op1, op2, result));
             }
         });
+
+        return ir.get(ir.size() - 1).getFocus();
     }
 
     private Variable resolveToken(Expression.Token token) {

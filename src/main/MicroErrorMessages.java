@@ -6,5 +6,7 @@ package main;
 public class MicroErrorMessages {
 
     public static String UndefinedVariable = "Undefined Variable";
+    public static String UnknownCalcOp = "Unknown Calculation Operator";
+    public static String UnknownCompOp = "Unknown Comparison Operator";
 
 }

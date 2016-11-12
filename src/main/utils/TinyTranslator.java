@@ -39,7 +39,7 @@ public class TinyTranslator {
                     break;
                 case SUBF:
                     System.out.format("move %s r%s\n", op1, register);
-                    System.out.format("subfr%s r%s\n", op2, register);
+                    System.out.format("subr %s r%s\n", op2, register);
                     break;
                 case MULTI:
                     System.out.format("move %s r%s\n", op1, register);

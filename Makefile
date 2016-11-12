@@ -17,7 +17,7 @@ lexer:
 	org.antlr.v4.gui.TestRig main.Micro tokens -tokens
 run:
 	@java -cp "$(LIB_ANTLR):$(CLASS_PATH)" \
-	main.Micro testcases_step5/input/$(FILE).micro > $(FILE).test
+	main.Micro $(FILE).micro > $(FILE).test
 check:
 	diff -b -B testcases/output/$(FILE).out $(FILE).test
 download:

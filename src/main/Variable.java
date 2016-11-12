@@ -48,6 +48,10 @@ public final class Variable {
         return type == Type.INT;
     }
 
+    public boolean isFloat() {
+        return type == Type.FLOAT;
+    }
+
     public boolean isTemp() {
         return temp;
     }
@@ -65,7 +69,7 @@ public final class Variable {
     }
 
     public static Variable generateConstant(String id) {
-        if (id.matches("[+-]?[0-9]$"))
+        if (id.matches("[+-]?[0-9]+$"))
             return new Variable(Variable.Type.INT, id);
 
         if (id.matches("[+-]?([0-9]*[.])?[0-9]+"))

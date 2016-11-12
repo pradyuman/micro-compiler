@@ -78,4 +78,19 @@ public class IR extends LinkedList<IR.Node> {
         super();
     }
 
+    public static Opcode parseOperator(String operator, Variable.Type type) {
+        switch (operator) {
+            case "+":
+                return type == Variable.Type.INT ? Opcode.ADDI : Opcode.ADDF;
+            case "-":
+                return type == Variable.Type.INT ? Opcode.SUBI : Opcode.SUBF;
+            case "*":
+                return type == Variable.Type.INT ? Opcode.MULTI : Opcode.MULTF;
+            case "/":
+                return type == Variable.Type.INT ? Opcode.DIVI : Opcode.DIVF;
+            default:
+                throw new MicroException("Unknown Operator");
+        }
+    }
+
 }

@@ -108,21 +108,17 @@ public class MicroCustomListener extends MicroBaseListener {
 
     @Override
     public void exitIf_stmt(MicroParser.If_stmtContext ctx) {
-        System.out.println("EI:" + lcstack);
         ir.add(new IR.Node(
                 IR.Opcode.LABEL,
                 new Variable("label" + lcstack.peek(), Variable.Type.STRING, null)
         ));
         iejump.pop().setFocus(new Variable("label" + lcstack.pop(), Variable.Type.STRING, null));
-        System.out.println("EIN:" + lcstack);
-        System.out.println();
     }
 
     @Override
     public void enterElse_part(MicroParser.Else_partContext ctx) {
         if (ctx.getChild(0) == null) return;
 
-        System.out.println("EE:" + lcstack);
         ir.add(iejump.peek());
         ir.add(new IR.Node(
                 IR.Opcode.LABEL,
@@ -138,9 +134,6 @@ public class MicroCustomListener extends MicroBaseListener {
                 IR.Opcode.NE,
                 new Variable("label" + lcstack.peek(), Variable.Type.STRING, null)
         ));
-
-        System.out.println("EEN:" + lcstack);
-        System.out.println();
     }
 
     @Override
@@ -174,93 +167,67 @@ public class MicroCustomListener extends MicroBaseListener {
     @Override
     public void enterAssign_expr(MicroParser.Assign_exprContext ctx) {
         Variable var = getScopedVariable(ctx.getChild(0).getText());
-        // (TODO) Do some better error checking for var == null (throw exception)
-        if (var == null) return;
+        if (getScopedVariable(ctx.getChild(0).getText()) == null)
+            throw new MicroException("Variable Not In Scope");
 
-        List<Expression.Token> infix = Expression.tokenizeExpr(ctx.getChild(2).getText());
-        infix.add(0, new Expression.Operator(":="));
-        infix.add(0, new Expression.Token(Expression.Token.Type.VAR, var.getName()));
+        parseExpr(ctx.getChild(2).getText());
+        IR.Opcode opcode = var.isInt() ? IR.Opcode.STOREI : IR.Opcode.STOREF;
+        ir.add(new IR.Node(opcode, ir.get(ir.size()-1).getFocus(), var));
+    }
+
+    public void parseExpr(String expr) {
+        List<Expression.Token> infix = Expression.tokenizeExpr(expr);
         List<Expression.Token> postfix = Expression.transformToPostfix(infix);
         Expression.BENode tree = Expression.generateExpressionTree(postfix);
 
+        // Expression is a single constant
+        if (!tree.getToken().isOperator())
+            resolveToken(tree.getToken());
+
+        // Expression includes an operator
         tree.forEach(n -> {
             if (n.getToken().isOperator()) {
-                IR.Opcode opcode;
-                Variable op1, op2;
-                Expression.Token token;
                 Expression.Operator operator = (Expression.Operator)n.getToken();
-                if (operator.getValue() != ":=") {
-                    operator.setRegister(register++);
-                }
+                operator.setRegister(register++);
 
-                token = n.getLeft().getToken();
-                if (token.isOperator()) {
-                    Expression.Operator top = (Expression.Operator)token;
-                    op1 = new Variable("$T" + top.getRegister(), var.getType(), true);
-                } else {
-                    op1 = resolveId(token.getValue());
-                }
-                // (TODO) Better error - variable does not exist in program (throw exception)
-                if (op1 == null) return;
-                if (op1.isConstant()) {
-                    opcode = var.isInt() ? IR.Opcode.STOREI : IR.Opcode.STOREF;
-                    Variable temp = new Variable("$T" + register++, op1.getType(), true);
-                    ir.add(new IR.Node(opcode, op1, temp));
-                    op1 = temp;
-                }
-
-                token = n.getRight().getToken();
-                if (token.isOperator()) {
-                    Expression.Operator top = (Expression.Operator)token;
-                    op2 = new Variable("$T" + top.getRegister(), var.getType(), true);
-                } else {
-                    op2 = resolveId(token.getValue());
-                }
-                // (TODO) Better error - variable does not exist in program (throw exception)
-                if (op2 == null) return;
-                if (op2.isConstant()) {
-                    opcode = var.isInt() ? IR.Opcode.STOREI : IR.Opcode.STOREF;
-                    Variable temp = new Variable("$T" + register++, op2.getType(), true);
-                    ir.add(new IR.Node(opcode, op2, temp));
-                    op2 = temp;
-                }
-
-                // Can strings be operated on?
-                switch (operator.getValue()) {
-                    case ":=":
-                        opcode = var.isInt() ? IR.Opcode.STOREI : IR.Opcode.STOREF;
-                        ir.add(new IR.Node(opcode, op2, var));
-                        break;
-                    case "+":
-                        opcode = var.isInt() ? IR.Opcode.ADDI : IR.Opcode.ADDF;
-                        ir.add(new IR.Node(opcode, op1, op2,
-                                new Variable("$T" + operator.getRegister(), var.getType(), true)));
-                        break;
-                    case "-":
-                        opcode = var.isInt() ? IR.Opcode.SUBI : IR.Opcode.SUBF;
-                        ir.add(new IR.Node(opcode, op1, op2,
-                                new Variable("$T" + operator.getRegister(), var.getType(), true)));
-                        break;
-                    case "*":
-                        opcode = var.isInt() ? IR.Opcode.MULTI : IR.Opcode.MULTF;
-                        ir.add(new IR.Node(opcode, op1, op2,
-                                new Variable("$T" + operator.getRegister(), var.getType(), true)));
-                        break;
-                    case "/":
-                        opcode = var.isInt() ? IR.Opcode.DIVI : IR.Opcode.DIVF;
-                        ir.add(new IR.Node(opcode, op1, op2,
-                                new Variable("$T" + operator.getRegister(), var.getType(), true)));
-                        break;
-                }
+                Variable op1 = resolveToken(n.getLeft().getToken());
+                Variable op2 = resolveToken(n.getRight().getToken());
+                Variable.Type exprType = op1.isFloat() || op2.isFloat() ? Variable.Type.FLOAT : Variable.Type.INT;
+                Variable result = new Variable("$T" + operator.getRegister(), exprType, true);
+                ir.add(new IR.Node(IR.parseOperator(operator.getValue(), exprType), op1, op2, result));
             }
         });
     }
 
+    private Variable resolveToken(Expression.Token token) {
+        Variable var = tokenToVariable(token);
+
+        if (var == null)
+            throw new MicroException("Variable Not In Scope");
+
+        if (var.isConstant()) {
+            IR.Opcode opcode = var.isInt() ? IR.Opcode.STOREI : IR.Opcode.STOREF;
+            Variable temp = new Variable("$T" + register++, var.getType(), true);
+            ir.add(new IR.Node(opcode, var, temp));
+            return temp;
+        }
+
+        return var;
+    }
+
+    private Variable tokenToVariable(Expression.Token token) {
+        if (token.isOperator())
+            return new Variable("$T" + ((Expression.Operator)token).getRegister(), null, true);
+
+        return resolveId(token.getValue());
+    }
+
     private Variable resolveId(String id) {
         Variable var = getScopedVariable(id);
-        if (var == null) {
+
+        if (var == null)
             var = Variable.generateConstant(id);
-        }
+
         return var;
     }
 

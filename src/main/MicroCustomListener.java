@@ -9,8 +9,13 @@ import java.util.Stack;
 
 public class MicroCustomListener extends MicroBaseListener {
 
+    private static String BLOCK = "BLOCK";
+    private static String GLOBAL = "GLOBAL";
+    private static String LABEL_PREFIX = "label";
+    private static String TEMPREG_PREFIX = "$T";
+
     private int blocknum;
-    private int label;
+    private int labelnum;
     private int register;
     private List<IR.Node> ir;
     private Stack<Integer> scope;
@@ -21,7 +26,7 @@ public class MicroCustomListener extends MicroBaseListener {
 
     public MicroCustomListener() {
         this.blocknum = 1;
-        this.label = 1;
+        this.labelnum = 1;
         this.register = 1;
         this.ir = new IR();
         this.scope = new Stack<>();
@@ -32,6 +37,10 @@ public class MicroCustomListener extends MicroBaseListener {
 
     private SymbolMap lastMap() {
         return symbolMaps.get(symbolMaps.size()-1);
+    }
+
+    private String nextBlockName() {
+        return BLOCK + " " + blocknum++;
     }
 
     private Variable getScopedVariable(String id) {
@@ -45,7 +54,7 @@ public class MicroCustomListener extends MicroBaseListener {
     @Override
     public void enterPgm_body(MicroParser.Pgm_bodyContext ctx) {
         scope.push(0);
-        symbolMaps.add(new SymbolMap("GLOBAL"));
+        symbolMaps.add(new SymbolMap(GLOBAL));
     }
 
     @Override
@@ -93,15 +102,14 @@ public class MicroCustomListener extends MicroBaseListener {
 
     @Override
     public void enterIf_stmt(MicroParser.If_stmtContext ctx) {
-        symbolMaps.add(new SymbolMap("BLOCK " + blocknum));
+        symbolMaps.add(new SymbolMap(nextBlockName()));
         scope.push(symbolMaps.size()-1);
-        blocknum++;
 
         ir.add(new IR.Node(
                 IR.Opcode.EQ,
-                new Variable("label" + label, Variable.Type.STRING, null)
+                new Variable(LABEL_PREFIX + labelnum, Variable.Type.STRING, null)
         ));
-        lcstack.push(label++);
+        lcstack.push(labelnum++);
 
         iejump.push(new IR.Node(IR.Opcode.JUMP, null));
     }
@@ -110,29 +118,28 @@ public class MicroCustomListener extends MicroBaseListener {
     public void exitIf_stmt(MicroParser.If_stmtContext ctx) {
         ir.add(new IR.Node(
                 IR.Opcode.LABEL,
-                new Variable("label" + lcstack.peek(), Variable.Type.STRING, null)
+                new Variable(LABEL_PREFIX + lcstack.peek(), Variable.Type.STRING, null)
         ));
-        iejump.pop().setFocus(new Variable("label" + lcstack.pop(), Variable.Type.STRING, null));
+        iejump.pop().setFocus(new Variable(LABEL_PREFIX + lcstack.pop(), Variable.Type.STRING, null));
     }
 
     @Override
     public void enterElse_part(MicroParser.Else_partContext ctx) {
         if (ctx.getChild(0) == null) return;
 
+        symbolMaps.add(new SymbolMap(nextBlockName()));
+        scope.push(symbolMaps.size() - 1);
+
         ir.add(iejump.peek());
         ir.add(new IR.Node(
                 IR.Opcode.LABEL,
-                new Variable("label" + lcstack.pop(), Variable.Type.STRING, null)
+                new Variable(LABEL_PREFIX + lcstack.pop(), Variable.Type.STRING, null)
         ));
-        System.out.println("entered_");
-        symbolMaps.add(new SymbolMap("BLOCK " + blocknum));
-        scope.push(symbolMaps.size() - 1);
-        blocknum++;
 
-        lcstack.push(label++);
+        lcstack.push(labelnum++);
         ir.add(new IR.Node(
                 IR.Opcode.NE,
-                new Variable("label" + lcstack.peek(), Variable.Type.STRING, null)
+                new Variable(LABEL_PREFIX + lcstack.peek(), Variable.Type.STRING, null)
         ));
     }
 
@@ -143,20 +150,19 @@ public class MicroCustomListener extends MicroBaseListener {
 
     @Override
     public void enterDo_while_stmt(MicroParser.Do_while_stmtContext ctx) {
-        symbolMaps.add(new SymbolMap("BLOCK " + blocknum));
+        symbolMaps.add(new SymbolMap(nextBlockName()));
         scope.push(symbolMaps.size()-1);
-        blocknum++;
 
         ir.add(new IR.Node(
                 IR.Opcode.LABEL,
-                new Variable("label" + label, Variable.Type.STRING, null)
+                new Variable(LABEL_PREFIX + labelnum, Variable.Type.STRING, null)
         ));
-        lcstack.push(label++);
+        lcstack.push(labelnum++);
     }
 
     @Override
     public void exitDo_while_stmt(MicroParser.Do_while_stmtContext ctx) {
-        String loopexit = "label" + lcstack.pop();
+        String loopexit = LABEL_PREFIX + lcstack.pop();
         ir.add(new IR.Node(
                 IR.Opcode.GE,
                 new Variable(loopexit, Variable.Type.STRING, null)
@@ -167,8 +173,8 @@ public class MicroCustomListener extends MicroBaseListener {
     @Override
     public void enterAssign_expr(MicroParser.Assign_exprContext ctx) {
         Variable var = getScopedVariable(ctx.getChild(0).getText());
-        if (getScopedVariable(ctx.getChild(0).getText()) == null)
-            throw new MicroException("Variable Not In Scope");
+        if (var == null)
+            throw new MicroException(MicroErrorMessages.UndefinedVariable);
 
         parseExpr(ctx.getChild(2).getText());
         IR.Opcode opcode = var.isInt() ? IR.Opcode.STOREI : IR.Opcode.STOREF;
@@ -193,7 +199,7 @@ public class MicroCustomListener extends MicroBaseListener {
                 Variable op1 = resolveToken(n.getLeft().getToken());
                 Variable op2 = resolveToken(n.getRight().getToken());
                 Variable.Type exprType = op1.isFloat() || op2.isFloat() ? Variable.Type.FLOAT : Variable.Type.INT;
-                Variable result = new Variable("$T" + operator.getRegister(), exprType, true);
+                Variable result = new Variable(TEMPREG_PREFIX + operator.getRegister(), exprType, true);
                 ir.add(new IR.Node(IR.parseOperator(operator.getValue(), exprType), op1, op2, result));
             }
         });
@@ -203,11 +209,11 @@ public class MicroCustomListener extends MicroBaseListener {
         Variable var = tokenToVariable(token);
 
         if (var == null)
-            throw new MicroException("Variable Not In Scope");
+            throw new MicroException(MicroErrorMessages.UndefinedVariable);
 
         if (var.isConstant()) {
             IR.Opcode opcode = var.isInt() ? IR.Opcode.STOREI : IR.Opcode.STOREF;
-            Variable temp = new Variable("$T" + register++, var.getType(), true);
+            Variable temp = new Variable(TEMPREG_PREFIX + register++, var.getType(), true);
             ir.add(new IR.Node(opcode, var, temp));
             return temp;
         }
@@ -217,7 +223,7 @@ public class MicroCustomListener extends MicroBaseListener {
 
     private Variable tokenToVariable(Expression.Token token) {
         if (token.isOperator())
-            return new Variable("$T" + ((Expression.Operator)token).getRegister(), null, true);
+            return new Variable(TEMPREG_PREFIX + ((Expression.Operator)token).getRegister(), null, true);
 
         return resolveId(token.getValue());
     }
@@ -226,7 +232,7 @@ public class MicroCustomListener extends MicroBaseListener {
         Variable var = getScopedVariable(id);
 
         if (var == null)
-            var = Variable.generateConstant(id);
+            var = Variable.parseConstant(id);
 
         return var;
     }
@@ -235,8 +241,9 @@ public class MicroCustomListener extends MicroBaseListener {
     public void enterRead_stmt(MicroParser.Read_stmtContext ctx) {
         for (String s : ctx.getChild(2).getText().split(",")) {
             Variable var = getScopedVariable(s);
-            // (TODO) Do some better error checking for var == null (throw exception)
-            if (var == null) return;
+            if (var == null)
+                throw new MicroException(MicroErrorMessages.UndefinedVariable);
+
             IR.Opcode opcode = var.isInt() ? IR.Opcode.READI : IR.Opcode.READF;
             ir.add(new IR.Node(opcode, var));
         }
@@ -246,8 +253,9 @@ public class MicroCustomListener extends MicroBaseListener {
     public void enterWrite_stmt(MicroParser.Write_stmtContext ctx) {
         for (String s : ctx.getChild(2).getText().split(",")) {
             Variable var = getScopedVariable(s);
-            // (TODO) Do some error checking for var == null (throw exception)
-            if (var == null) return;
+            if (var == null)
+                throw new MicroException(MicroErrorMessages.UndefinedVariable);
+
             IR.Opcode opcode = var.isInt() ? IR.Opcode.WRITEI : IR.Opcode.WRITEF;
             ir.add(new IR.Node(opcode, var));
         }

@@ -68,7 +68,7 @@ public final class Variable {
         return value;
     }
 
-    public static Variable generateConstant(String id) {
+    public static Variable parseConstant(String id) {
         if (id.matches("[+-]?[0-9]+$"))
             return new Variable(Variable.Type.INT, id);
 

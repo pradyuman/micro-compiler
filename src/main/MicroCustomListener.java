@@ -101,16 +101,54 @@ public class MicroCustomListener extends MicroBaseListener {
     }
 
     @Override
+    public void enterAssign_expr(MicroParser.Assign_exprContext ctx) {
+        Variable var = getScopedVariable(ctx.getChild(0).getText());
+        if (var == null)
+            throw new MicroException(MicroErrorMessages.UndefinedVariable);
+
+
+        Variable focus = parseExpr(ctx.getChild(2).getText());
+        IR.Opcode opcode = var.isInt() ? IR.Opcode.STOREI : IR.Opcode.STOREF;
+        ir.add(new IR.Node(opcode, focus, var));
+    }
+
+    @Override
+    public void enterRead_stmt(MicroParser.Read_stmtContext ctx) {
+        for (String s : ctx.getChild(2).getText().split(",")) {
+            Variable var = getScopedVariable(s);
+            if (var == null)
+                throw new MicroException(MicroErrorMessages.UndefinedVariable);
+
+            IR.Opcode opcode = var.isInt() ? IR.Opcode.READI : IR.Opcode.READF;
+            ir.add(new IR.Node(opcode, var));
+        }
+    }
+
+    @Override
+    public void enterWrite_stmt(MicroParser.Write_stmtContext ctx) {
+        for (String s : ctx.getChild(2).getText().split(",")) {
+            Variable var = getScopedVariable(s);
+            if (var == null)
+                throw new MicroException(MicroErrorMessages.UndefinedVariable);
+
+            IR.Opcode opcode = var.isInt() ? IR.Opcode.WRITEI : IR.Opcode.WRITEF;
+            ir.add(new IR.Node(opcode, var));
+        }
+    }
+
+    @Override
     public void enterIf_stmt(MicroParser.If_stmtContext ctx) {
         symbolMaps.add(new SymbolMap(nextBlockName()));
         scope.push(symbolMaps.size()-1);
 
+        parseCond(ctx.getChild(2), LABEL_PREFIX + labelnum, true);
+        /*
         ir.add(new IR.Node(
                 IR.Opcode.EQ,
                 new Variable(LABEL_PREFIX + labelnum, Variable.Type.STRING, null)
         ));
+        */
         lcstack.push(labelnum++);
-
         iejump.push(new IR.Node(IR.Opcode.JUMP, null));
     }
 
@@ -137,10 +175,7 @@ public class MicroCustomListener extends MicroBaseListener {
         ));
 
         lcstack.push(labelnum++);
-        ir.add(new IR.Node(
-                IR.Opcode.NE,
-                new Variable(LABEL_PREFIX + lcstack.peek(), Variable.Type.STRING, null)
-        ));
+        parseCond(ctx.getChild(2), LABEL_PREFIX + lcstack.peek(), true);
     }
 
     @Override
@@ -162,35 +197,29 @@ public class MicroCustomListener extends MicroBaseListener {
 
     @Override
     public void exitDo_while_stmt(MicroParser.Do_while_stmtContext ctx) {
-        ParseTree cond = ctx.getChild(5);
-        Variable target = new Variable(LABEL_PREFIX + lcstack.pop(), Variable.Type.STRING, null);
+        parseCond(ctx.getChild(5), LABEL_PREFIX + lcstack.pop(), false);
+        scope.pop();
+    }
+
+    public void parseCond(ParseTree cond, String label, boolean opposite) {
+        Variable target = new Variable(label, Variable.Type.STRING, null);
 
         switch (cond.getText()) {
             case "TRUE":
-                ir.add(new IR.Node(IR.Opcode.JUMP, target));
+                if (!opposite)
+                    ir.add(new IR.Node(IR.Opcode.JUMP, target));
                 break;
             case "FALSE":
+                if (opposite)
+                    ir.add(new IR.Node(IR.Opcode.JUMP, target));
                 break;
             default:
                 Variable left = parseExpr(cond.getChild(0).getText());
                 Variable right = parseExpr(cond.getChild(2).getText());
-                IR.Opcode opcode = IR.parseCompOp(cond.getChild(1).getText(), false);
+                IR.Opcode opcode = IR.parseCompOp(cond.getChild(1).getText(), opposite);
                 ir.add(new IR.Node(opcode, left, right, target));
                 break;
         }
-        scope.pop();
-    }
-
-    @Override
-    public void enterAssign_expr(MicroParser.Assign_exprContext ctx) {
-        Variable var = getScopedVariable(ctx.getChild(0).getText());
-        if (var == null)
-            throw new MicroException(MicroErrorMessages.UndefinedVariable);
-
-
-        Variable focus = parseExpr(ctx.getChild(2).getText());
-        IR.Opcode opcode = var.isInt() ? IR.Opcode.STOREI : IR.Opcode.STOREF;
-        ir.add(new IR.Node(opcode, focus, var));
     }
 
     // Returns last relevant variable on IR
@@ -256,28 +285,5 @@ public class MicroCustomListener extends MicroBaseListener {
         return var;
     }
 
-    @Override
-    public void enterRead_stmt(MicroParser.Read_stmtContext ctx) {
-        for (String s : ctx.getChild(2).getText().split(",")) {
-            Variable var = getScopedVariable(s);
-            if (var == null)
-                throw new MicroException(MicroErrorMessages.UndefinedVariable);
-
-            IR.Opcode opcode = var.isInt() ? IR.Opcode.READI : IR.Opcode.READF;
-            ir.add(new IR.Node(opcode, var));
-        }
-    }
-
-    @Override
-    public void enterWrite_stmt(MicroParser.Write_stmtContext ctx) {
-        for (String s : ctx.getChild(2).getText().split(",")) {
-            Variable var = getScopedVariable(s);
-            if (var == null)
-                throw new MicroException(MicroErrorMessages.UndefinedVariable);
-
-            IR.Opcode opcode = var.isInt() ? IR.Opcode.WRITEI : IR.Opcode.WRITEF;
-            ir.add(new IR.Node(opcode, var));
-        }
-    }
 
 }

@@ -1,6 +1,11 @@
 package main.utils;
 
+import main.MicroErrorMessages;
+import main.MicroException;
+import main.SymbolMap;
+
 import java.util.*;
+import java.util.stream.IntStream;
 
 public final class Expression {
 
@@ -9,17 +14,24 @@ public final class Expression {
     public static class Token {
 
         public enum Type {
-            VAR, OPERATOR, LPAREN, RPAREN,
+            VAR, FUNCTION, FSEPARATOR, OPERATOR, LPAREN, RPAREN,
         }
 
-        public static String calcop = "[-+*/()]";
+        public static String calcop = "[-+*/(),]";
 
         private Type type;
         private String value;
+        private int numParam;
 
         public Token(Type type, String value) {
             this.type = type;
             this.value = value;
+        }
+
+        public Token(Type type, String value, int numParam) {
+            this.type = type;
+            this.value = value;
+            this.numParam = numParam;
         }
 
         @Override
@@ -38,6 +50,10 @@ public final class Expression {
             return value;
         }
 
+        public int getNumParam() {
+            return numParam;
+        }
+
         public String getValue() {
             return value;
         }
@@ -46,13 +62,22 @@ public final class Expression {
             return type;
         }
 
-        public boolean isOperator() {
-            return type == Type.OPERATOR;
+        public boolean isFunction() {
+            return type == Type.FUNCTION;
         }
 
         public boolean isLParen() {
             return type == Type.LPAREN;
         }
+
+        public boolean isRParen() {
+            return type == Type.RPAREN;
+        }
+
+        public boolean isOperator() {
+            return type == Type.OPERATOR;
+        }
+
     }
 
     public static final class Operator extends Token {
@@ -84,16 +109,16 @@ public final class Expression {
     }
 
     // Binary Expression Node
-    public static final class BENode implements Iterable<BENode> {
+    public static final class BENode extends LinkedList<BENode> {
 
         private Token token;
-        private BENode left;
-        private BENode right;
         private List<BENode> postorder;
 
         public BENode(Token token) {
             super();
             this.token = token;
+            add(null);
+            add(null);
         }
 
         public Token getToken() {
@@ -101,19 +126,19 @@ public final class Expression {
         }
 
         public BENode getLeft() {
-            return left;
+            return get(0);
         }
 
         public void setLeft(BENode node) {
-            this.left = node;
+            set(0, node);
         }
 
         public BENode getRight() {
-            return right;
+            return get(1);
         }
 
         public void setRight(BENode node) {
-            this.right = node;
+            set(1, node);
         }
 
         @Override
@@ -121,6 +146,14 @@ public final class Expression {
             StringBuilder b = new StringBuilder();
             forEach(n -> b.append(n.getToken() + " "));
             return b.toString();
+        }
+
+        @Override
+        public void addFirst(BENode n) {
+            if (stream().allMatch(e -> e == null))
+                clear();
+
+            super.addFirst(n);
         }
 
         @Override
@@ -157,23 +190,32 @@ public final class Expression {
 
     }
 
-    public static List<Token> tokenizeExpr(String expr) {
+    public static List<Token> tokenizeExpr(String expr, List<SymbolMap> symbolMaps) {
         List<Token> list = new LinkedList<>();
 
         for (String s : expr.split("(?<=op)|(?=op)".replace("op", Token.calcop))) {
             Token.Type t = Token.Type.VAR;
+            SymbolMap func = symbolMaps.stream().filter(m -> m.getName().equals(s)).findFirst().orElse(null);
+
             if (s.equals("(")) {
                 t = Token.Type.LPAREN;
             } else if (s.equals(")")) {
                 t = Token.Type.RPAREN;
+            } else if (s.equals(",")) {
+                t = Token.Type.FSEPARATOR;
             } else if (s.matches(Token.calcop)) {
                 t = Token.Type.OPERATOR;
+            } else if (func != null) {
+                t = Token.Type.FUNCTION;
             }
 
-            if (t == Token.Type.OPERATOR) {
-                list.add(new Operator(s));
-            } else {
-                list.add(new Token(t, s));
+            switch (t) {
+                case FUNCTION:
+                    list.add(new Token(t, s, func.getNumParam())); break;
+                case OPERATOR:
+                    list.add(new Operator(s)); break;
+                default:
+                    list.add(new Token(t, s));
             }
         }
 
@@ -182,18 +224,31 @@ public final class Expression {
 
     public static List<Token> transformToPostfix(List<Token> infix) {
         List<Token> postfix = new LinkedList<>();
-        Stack<Token> stack = new Stack<>();
+        Deque<Token> stack = new ArrayDeque<>();
 
         infix.forEach(t -> {
+            Token top = stack.peek();
             switch (t.getType()) {
                 case VAR:
                     postfix.add(t);
                     break;
-                case OPERATOR:
-                    Token top = stack.empty() ? null : stack.peek();
-                    while (!stack.empty() && top.isOperator() && !((Operator)t).isHigherPrecedence((Operator)top)) {
+                case FUNCTION:
+                    stack.push(t);
+                    break;
+                case FSEPARATOR:
+                    while (top != null && top.isOperator() && !top.isLParen()) {
                         postfix.add(stack.pop());
-                        top = stack.empty() ? null : stack.peek();
+                        top = stack.peek();
+                    }
+
+                    if (!top.isLParen())
+                        throw new MicroException(MicroErrorMessages.MismatchedParentheses);
+
+                    break;
+                case OPERATOR:
+                    while (top != null && top.isOperator() && !((Operator)t).isHigherPrecedence((Operator)top)) {
+                        postfix.add(stack.pop());
+                        top = stack.peek();
                     }
                     stack.push(t);
                     break;
@@ -201,17 +256,26 @@ public final class Expression {
                     stack.push(t);
                     break;
                 case RPAREN:
-                    // (TODO) Better error handling: if stack runs out without a LPAREN then mismatched parentheses
-                    while(!stack.empty() && !stack.peek().isLParen()) {
+                    while(stack.peek() != null && !stack.peek().isLParen())
                         postfix.add(stack.pop());
-                    }
+
+                    if (!stack.peek().isLParen())
+                        throw new MicroException(MicroErrorMessages.MismatchedParentheses);
+
+                    // Pop LParen
                     stack.pop();
+
+                    if (stack.peek().isFunction())
+                        postfix.add(stack.pop());
+
                     break;
             }
         });
 
-        // (TODO) Better error handling: if top of stack is parenthesis then mismatched parentheses
-        while (!stack.empty()) {
+        while (stack.peek() != null) {
+            if (stack.peek().isLParen() || stack.peek().isRParen())
+                throw new MicroException(MicroErrorMessages.MismatchedParentheses);
+
             postfix.add(stack.pop());
         }
 
@@ -221,13 +285,18 @@ public final class Expression {
     public static BENode generateExpressionTree(List<Token> postfix) {
         Stack<BENode> stack = new Stack<>();
         postfix.forEach(t -> {
-           if (!t.isOperator()) {
-               stack.push(new BENode(t));
-           } else {
+           if (t.isOperator()) {
                BENode n = new BENode(t);
                n.setRight(stack.pop());
                n.setLeft(stack.pop());
                stack.push(n);
+           } else if (t.isFunction()) {
+               BENode n = new BENode(t);
+               IntStream.range(0, t.getNumParam())
+                       .forEach(__ -> n.addFirst(stack.pop()));
+               stack.push(n);
+            } else {
+               stack.push(new BENode(t));
            }
         });
         return stack.pop();

@@ -44,8 +44,7 @@ public final class Variable {
     }
 
     // RETURN
-    public Variable(String name, Type type, Context ctx) {
-        this.name = name;
+    public Variable(Type type, Context ctx) {
         this.type = type;
         this.ctx = ctx;
     }

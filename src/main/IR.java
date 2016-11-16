@@ -43,7 +43,7 @@ public class IR extends LinkedList<IR.Node> {
         private Variable op2;
         private Variable focus;
 
-        // LINK RET
+        // LINK RET JUMP-PREINIT
         public Node(Opcode opcode) {
             this.opcode = opcode;
         }
@@ -81,8 +81,6 @@ public class IR extends LinkedList<IR.Node> {
             return s;
         }
 
-
-
         public Type getType() {
             if (CalcSet.contains(opcode)) return Type.CALC;
             if (CompSet.contains(opcode)) return Type.COMP;
@@ -92,6 +90,10 @@ public class IR extends LinkedList<IR.Node> {
             if (opcode == Opcode.LABEL) return Type.LABEL;
 
             throw new MicroException(MicroErrorMessages.UnknownIRNodeType);
+        }
+
+        public boolean isRet() {
+            return opcode == Opcode.RET;
         }
 
         public Opcode getOpcode() {

@@ -7,6 +7,7 @@ public final class SymbolMap extends LinkedHashMap<String, Variable> {
 
     private String name;
     private boolean isFunction;
+    private int numParam;
 
     public SymbolMap(String name) {
         super();
@@ -30,7 +31,7 @@ public final class SymbolMap extends LinkedHashMap<String, Variable> {
     @Override
     public Variable put(String name, Variable v) {
         if (containsKey(v.getName())) {
-            throw new MicroException("DECLARATION ERROR " + v.getName());
+            throw new MicroException(MicroErrorMessages.DuplicateDeclaration + ": " + v.getName());
         }
         return super.put(name, v);
     }
@@ -39,4 +40,15 @@ public final class SymbolMap extends LinkedHashMap<String, Variable> {
         return isFunction;
     }
 
+    public String getName() {
+        return name;
+    }
+
+    public int getNumParam() {
+        return numParam;
+    }
+
+    public void setNumParam(int num) {
+        this.numParam = num;
+    }
 }

@@ -1,23 +1,30 @@
 package main;
 
+
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+
 import java.lang.StringBuilder;
 import java.util.LinkedHashMap;
 
+@Data
+@EqualsAndHashCode(callSuper = true)
 public final class SymbolMap extends LinkedHashMap<String, Variable> {
 
-    private String name;
-    private boolean isFunction;
+    private final String name;
+    private final boolean function;
     private int numParam;
 
     public SymbolMap(String name) {
         super();
         this.name = name;
+        this.function = false;
     }
 
-    public SymbolMap(String name, boolean isFunction) {
+    public SymbolMap(String name, boolean function) {
         super();
         this.name = name;
-        this.isFunction = isFunction;
+        this.function = function;
     }
 
     @Override
@@ -36,19 +43,4 @@ public final class SymbolMap extends LinkedHashMap<String, Variable> {
         return super.put(name, v);
     }
 
-    public boolean isFunction() {
-        return isFunction;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public int getNumParam() {
-        return numParam;
-    }
-
-    public void setNumParam(int num) {
-        this.numParam = num;
-    }
 }

@@ -1,5 +1,7 @@
 package main.utils;
 
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 import main.MicroErrorMessages;
 import main.MicroException;
 import main.SymbolMap;
@@ -11,6 +13,7 @@ public final class Expression {
 
     private Expression() {}
 
+    @Data
     public static class Token {
 
         public enum Type {
@@ -34,34 +37,6 @@ public final class Expression {
             this.numParam = numParam;
         }
 
-        @Override
-        public boolean equals(Object o) {
-            Token t = (Token)o;
-            return type == t.getType() && value.equals(t.getValue());
-        }
-
-        @Override
-        public int hashCode() {
-            return type.hashCode() + value.hashCode();
-        }
-
-        @Override
-        public String toString() {
-            return value;
-        }
-
-        public int getNumParam() {
-            return numParam;
-        }
-
-        public String getValue() {
-            return value;
-        }
-
-        public Type getType() {
-            return type;
-        }
-
         public boolean isFunction() {
             return type == Type.FUNCTION;
         }
@@ -80,6 +55,8 @@ public final class Expression {
 
     }
 
+    @Data
+    @EqualsAndHashCode(callSuper = true)
     public static final class Operator extends Token {
 
         private int precedence;
@@ -91,53 +68,39 @@ public final class Expression {
             else this.precedence = value.matches("[+-]") ? 1 : 2;
         }
 
-        public int getPrecedence() {
-            return precedence;
-        }
-
-        public int getRegister() {
-            return register;
-        }
-
-        public void setRegister(int register) {
-            this.register = register;
-        }
-
         public boolean isHigherPrecedence(Operator t) {
             return precedence > t.getPrecedence();
         }
     }
 
     // Binary Expression Node
-    public static final class BENode extends LinkedList<BENode> {
+    @Data
+    @EqualsAndHashCode(callSuper = true)
+    public static final class ENode extends LinkedList<ENode> {
 
         private Token token;
-        private List<BENode> postorder;
+        private List<ENode> postorder;
 
-        public BENode(Token token) {
+        public ENode(Token token) {
             super();
             this.token = token;
             add(null);
             add(null);
         }
 
-        public Token getToken() {
-            return token;
-        }
-
-        public BENode getLeft() {
+        public ENode getLeft() {
             return get(0);
         }
 
-        public void setLeft(BENode node) {
+        public void setLeft(ENode node) {
             set(0, node);
         }
 
-        public BENode getRight() {
+        public ENode getRight() {
             return get(1);
         }
 
-        public void setRight(BENode node) {
+        public void setRight(ENode node) {
             set(1, node);
         }
 
@@ -149,7 +112,7 @@ public final class Expression {
         }
 
         @Override
-        public void addFirst(BENode n) {
+        public void addFirst(ENode n) {
             if (stream().allMatch(e -> e == null))
                 clear();
 
@@ -157,11 +120,11 @@ public final class Expression {
         }
 
         @Override
-        public Iterator<BENode> iterator() {
+        public Iterator<ENode> iterator() {
             this.postorder = new LinkedList<>();
 
-            BENode cur = BENode.this;
-            Stack<BENode> stack = new Stack<>();
+            ENode cur = ENode.this;
+            Stack<ENode> stack = new Stack<>();
 
             while (true) {
                 while (cur != null) {
@@ -282,21 +245,21 @@ public final class Expression {
         return postfix;
     }
 
-    public static BENode generateExpressionTree(List<Token> postfix) {
-        Stack<BENode> stack = new Stack<>();
+    public static ENode generateExpressionTree(List<Token> postfix) {
+        Stack<ENode> stack = new Stack<>();
         postfix.forEach(t -> {
            if (t.isOperator()) {
-               BENode n = new BENode(t);
+               ENode n = new ENode(t);
                n.setRight(stack.pop());
                n.setLeft(stack.pop());
                stack.push(n);
            } else if (t.isFunction()) {
-               BENode n = new BENode(t);
+               ENode n = new ENode(t);
                IntStream.range(0, t.getNumParam())
                        .forEach(__ -> n.addFirst(stack.pop()));
                stack.push(n);
             } else {
-               stack.push(new BENode(t));
+               stack.push(new ENode(t));
            }
         });
         return stack.pop();

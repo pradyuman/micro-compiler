@@ -105,7 +105,7 @@ public class TinyTranslator {
 
     private String resolveFocus(Variable focus) {
         if (focus.isTemp()) {
-            map.put(focus.getName(), ++register);
+            map.put(focus.getRef(), ++register);
             return "r" + register;
         }
         return focus.getName();

@@ -1,5 +1,8 @@
 package main;
 
+import lombok.Data;
+
+@Data
 public final class Variable {
 
     private static String FLOCAL_PREFIX = "$L";
@@ -67,7 +70,7 @@ public final class Variable {
         if (name != null)
             s += " name " + name;
 
-        return s + " stringref " + getStringRef();
+        return s + " ref " + getRef();
     }
 
     public boolean isConstant() {
@@ -86,18 +89,6 @@ public final class Variable {
         return ctx == Context.TEMP;
     }
 
-    public String getName() {
-        return name;
-    }
-
-    public Type getType() {
-        return type;
-    }
-
-    public String getValue() {
-        return value;
-    }
-
     public static Variable parseConstant(String id) {
         if (id.matches("[+-]?[0-9]+$"))
             return new Variable(Variable.Type.INT, id);
@@ -108,7 +99,7 @@ public final class Variable {
         return null;
     }
 
-    public String getStringRef() {
+    public String getRef() {
         switch (ctx) {
             case NORMAL:
                 return name;

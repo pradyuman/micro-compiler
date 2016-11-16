@@ -1,5 +1,7 @@
 package main;
 
+import lombok.Data;
+
 import java.util.EnumSet;
 import java.util.LinkedList;
 
@@ -15,6 +17,7 @@ public class IR extends LinkedList<IR.Node> {
         JSR, PUSH, POP, RET, LINK
     }
 
+    @Data
     public static class Node {
 
         public enum Type {
@@ -75,9 +78,9 @@ public class IR extends LinkedList<IR.Node> {
         @Override
         public String toString() {
             String s = opcode.toString();
-            if (op1 != null) s += " " + op1.getStringRef();
-            if (op2 != null) s += " " + op2.getStringRef();
-            if (focus != null) s += " " + focus.getStringRef();
+            if (op1 != null) s += " " + op1.getRef();
+            if (op2 != null) s += " " + op2.getRef();
+            if (focus != null) s += " " + focus.getRef();
             return s;
         }
 
@@ -94,26 +97,6 @@ public class IR extends LinkedList<IR.Node> {
 
         public boolean isRet() {
             return opcode == Opcode.RET;
-        }
-
-        public Opcode getOpcode() {
-            return opcode;
-        }
-
-        public Variable getOp1() {
-            return op1;
-        }
-
-        public Variable getOp2() {
-            return op2;
-        }
-
-        public Variable getFocus() {
-            return focus;
-        }
-
-        public void setFocus(Variable focus) {
-            this.focus = focus;
         }
 
     }

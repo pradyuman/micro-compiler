@@ -264,7 +264,7 @@ public class MicroCustomListener extends MicroBaseListener {
     public Variable parseExpr(String expr) {
         List<Expression.Token> infix = Expression.tokenizeExpr(expr, symbolMaps);
         List<Expression.Token> postfix = Expression.transformToPostfix(infix);
-        Expression.BENode tree = Expression.generateExpressionTree(postfix);
+        Expression.ENode tree = Expression.generateExpressionTree(postfix);
 
         // Expression is a single constant
         if (!tree.getToken().isOperator())

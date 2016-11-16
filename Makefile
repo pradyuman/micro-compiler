@@ -1,3 +1,4 @@
+LIB := "lib/*"
 LIB_ANTLR := lib/antlr.jar
 ANTLR_SCRIPT := Micro.g4
 CLASS_PATH := classes/
@@ -11,12 +12,12 @@ compiler:
 	java -cp $(LIB_ANTLR) org.antlr.v4.Tool -o build/main -package main $(ANTLR_SCRIPT)
 	rm -rf classes
 	mkdir -p classes
-	javac -cp $(LIB_ANTLR) -d classes src/main/*.java src/main/utils/*.java build/main/*.java
+	javac -cp $(LIB) -d classes src/main/*.java src/main/utils/*.java build/main/*.java
 lexer:
-	@java -cp "$(LIB_ANTLR):$(CLASS_PATH)" \
+	@java -cp "$(LIB):$(CLASS_PATH)" \
 	org.antlr.v4.gui.TestRig main.Micro tokens -tokens
 run:
-	@java -cp "$(LIB_ANTLR):$(CLASS_PATH)" \
+	@java -cp "$(LIB):$(CLASS_PATH)" \
 	main.Micro testcases/input/$(FILE).micro > $(FILE).test
 check:
 	diff -b -B testcases/output/$(FILE).out $(FILE).test

@@ -32,6 +32,7 @@ public class TinyTranslator {
         _dict.put(IR.Opcode.READF, "sys readr");
         _dict.put(IR.Opcode.WRITEI, "sys writei");
         _dict.put(IR.Opcode.WRITEF, "sys writer");
+        _dict.put(IR.Opcode.WRITES, "sys writes");
 
         dict = Collections.unmodifiableMap(_dict);
     }

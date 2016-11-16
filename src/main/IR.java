@@ -13,7 +13,7 @@ public class IR extends LinkedList<IR.Node> {
     public enum Opcode {
         ADDI, ADDF, SUBI, SUBF, MULTI, MULTF, DIVI, DIVF,
         STOREI, STOREF, GT, GE, LT, LE, NE, EQ, JUMP, LABEL,
-        READI, READF, WRITEI, WRITEF,
+        READI, READF, WRITEI, WRITEF, WRITES,
         JSR, PUSH, POP, RET, LINK
     }
 
@@ -46,7 +46,7 @@ public class IR extends LinkedList<IR.Node> {
         private Variable op2;
         private Variable focus;
 
-        // LINK RET JUMP-PREINIT
+        // LINK RET JUMP-PREINIT PUSH POP
         public Node(Opcode opcode) {
             this.opcode = opcode;
         }

@@ -79,13 +79,16 @@ public final class Expression {
         }
     }
 
-    // Binary Expression Node
+    /**
+     * Expression Node:
+     *  - [-+/*] are binary
+     *  - functions can have any number of children
+     */
     @Data
     @EqualsAndHashCode(callSuper = true)
     public static final class ENode extends LinkedList<ENode> {
 
         private Token token;
-        private List<ENode> postorder;
 
         public ENode(Token token) {
             super();
@@ -99,9 +102,8 @@ public final class Expression {
             return b.toString();
         }
 
-        @Override
-        public Iterator<ENode> iterator() {
-            this.postorder = new LinkedList<>();
+        public List<ENode> postorder() {
+            List<ENode>postorder = new LinkedList<>();
 
             @Data
             @AllArgsConstructor
@@ -118,7 +120,7 @@ public final class Expression {
                 if (stack.size() == 0) break;
 
                 if (stack.peek().isVisited()) {
-                    this.postorder.add(stack.pop().getNode());
+                    postorder.add(stack.pop().getNode());
                     continue;
                 }
 
@@ -131,7 +133,7 @@ public final class Expression {
                 }
             }
 
-            return postorder.iterator();
+            return postorder;
         }
 
     }

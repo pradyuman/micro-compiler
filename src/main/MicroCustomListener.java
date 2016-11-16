@@ -161,7 +161,16 @@ public class MicroCustomListener extends MicroBaseListener {
             if (var == null)
                 throw new MicroException(MicroErrorMessages.UndefinedVariable);
 
-            IR.Opcode opcode = var.isInt() ? IR.Opcode.WRITEI : IR.Opcode.WRITEF;
+            IR.Opcode opcode;
+            switch (var.getType()) {
+                case INT:
+                    opcode = IR.Opcode.WRITEI; break;
+                case FLOAT:
+                    opcode = IR.Opcode.WRITEF; break;
+                default:
+                    opcode = IR.Opcode.WRITES;
+            }
+
             ir.add(new IR.Node(opcode, var));
         }
     }
@@ -267,10 +276,15 @@ public class MicroCustomListener extends MicroBaseListener {
             return resolveToken(tree.getToken());
 
         // Expression includes an operator
-        tree.forEach(n -> {
+        tree.postorder().forEach(n -> {
             if (n.getToken().isFunction()) {
+                ir.add(new IR.Node(IR.Opcode.PUSH));
+                n.forEach(p -> ir.add(new IR.Node(IR.Opcode.PUSH, resolveToken(p.getToken()))));
                 ir.add(new IR.Node(IR.Opcode.JSR,
                         new Variable(n.getToken().getValue(), Variable.Type.STRING)));
+                n.forEach(p -> ir.add(new IR.Node(IR.Opcode.POP)));
+                ir.add(new IR.Node(IR.Opcode.POP,
+                        new Variable(null, null, Variable.Context.TEMP, register++)));
             }
 
             if (n.getToken().isOperator()) {
@@ -290,7 +304,6 @@ public class MicroCustomListener extends MicroBaseListener {
 
     private Variable resolveToken(Expression.Token token) {
         Variable var = tokenToVariable(token);
-
         if (var == null)
             throw new MicroException(MicroErrorMessages.UndefinedVariable);
 

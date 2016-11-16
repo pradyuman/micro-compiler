@@ -6,10 +6,17 @@ import java.util.LinkedHashMap;
 public final class SymbolMap extends LinkedHashMap<String, Variable> {
 
     private String name;
+    private boolean isFunction;
 
     public SymbolMap(String name) {
         super();
         this.name = name;
+    }
+
+    public SymbolMap(String name, boolean isFunction) {
+        super();
+        this.name = name;
+        this.isFunction = isFunction;
     }
 
     @Override
@@ -26,6 +33,10 @@ public final class SymbolMap extends LinkedHashMap<String, Variable> {
             throw new MicroException("DECLARATION ERROR " + v.getName());
         }
         return super.put(name, v);
+    }
+
+    public boolean isFunction() {
+        return isFunction;
     }
 
 }

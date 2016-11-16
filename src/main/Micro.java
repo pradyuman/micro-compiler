@@ -29,6 +29,7 @@ public class Micro {
             MicroCustomListener listener = new MicroCustomListener();
             walker.walk(listener, microProgramContext);
         } catch (MicroException e) {
+            e.printStackTrace();
             System.out.println(e.getMessage());
         }
     }

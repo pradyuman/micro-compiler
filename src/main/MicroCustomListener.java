@@ -13,8 +13,10 @@ public class MicroCustomListener extends MicroBaseListener {
     private static String BLOCK = "BLOCK";
     private static String GLOBAL = "GLOBAL";
     private static String LABEL_PREFIX = "label";
-    private static String TEMPREG_PREFIX = "$T";
 
+    private boolean inFunction;
+    private int flocalnum;
+    private int fparamnum;
     private int blocknum;
     private int labelnum;
     private int register;
@@ -25,6 +27,9 @@ public class MicroCustomListener extends MicroBaseListener {
     private List<SymbolMap> symbolMaps;
 
     public MicroCustomListener() {
+        this.inFunction = false;
+        this.flocalnum = 1;
+        this.fparamnum = 1;
         this.blocknum = 1;
         this.labelnum = 1;
         this.register = 1;
@@ -59,9 +64,12 @@ public class MicroCustomListener extends MicroBaseListener {
 
     @Override
     public void exitPgm_body(MicroParser.Pgm_bodyContext ctx) {
+        //symbolMaps.forEach(m -> System.out.println(";" + m));
+
         ir.forEach(n -> System.out.println(";" + n));
-        TinyTranslator tt = new TinyTranslator();
-        tt.printTinyFromIR(symbolMaps, ir);
+        //TinyTranslator tt = new TinyTranslator();
+        //tt.printTinyFromIR(symbolMaps, ir);
+
     }
 
     @Override
@@ -77,8 +85,16 @@ public class MicroCustomListener extends MicroBaseListener {
         Variable.Type type = Variable.Type.valueOf(rawtype);
 
         for (String s : ctx.getChild(1).getText().split(",")) {
-            lastMap().put(s, new Variable(s, type, null));
+            Variable var = inFunction
+                    ? new Variable(s, type, Variable.Context.FLOCAL, flocalnum++)
+                    : new Variable(s, type);
+            lastMap().put(s, var);
         }
+    }
+
+    @Override
+    public void exitParam_decl_list(MicroParser.Param_decl_listContext ctx) {
+        fparamnum = 1;
     }
 
     @Override
@@ -86,18 +102,28 @@ public class MicroCustomListener extends MicroBaseListener {
         String name = ctx.getChild(1).getText();
         String rawtype = ctx.getChild(0).getText();
         Variable.Type type = Variable.Type.valueOf(rawtype);
-        lastMap().put(name, new Variable(name, type, null));
+        lastMap().put(name, new Variable(name, type, Variable.Context.FPARAM, fparamnum++));
     }
 
     @Override
     public void enterFunc_decl(MicroParser.Func_declContext ctx) {
-        symbolMaps.add(new SymbolMap(ctx.getChild(2).getText()));
+        inFunction = true;
+
+        String name = ctx.getChild(2).getText();
+        symbolMaps.add(new SymbolMap(name, true));
         scope.push(symbolMaps.size()-1);
+
+        ir.add(new IR.Node(
+                IR.Opcode.LABEL,
+                new Variable(name, Variable.Type.STRING, "")));
+        ir.add(new IR.Node(IR.Opcode.LINK));
     }
 
     @Override
     public void exitFunc_decl(MicroParser.Func_declContext ctx) {
         scope.pop();
+        inFunction = false;
+        flocalnum = 1;
     }
 
     @Override
@@ -106,10 +132,13 @@ public class MicroCustomListener extends MicroBaseListener {
         if (var == null)
             throw new MicroException(MicroErrorMessages.UndefinedVariable);
 
-
-        Variable focus = parseExpr(ctx.getChild(2).getText());
-        IR.Opcode opcode = var.isInt() ? IR.Opcode.STOREI : IR.Opcode.STOREF;
-        ir.add(new IR.Node(opcode, focus, var));
+        try {
+            Variable focus = parseExpr(ctx.getChild(2).getText());
+            IR.Opcode opcode = var.isInt() ? IR.Opcode.STOREI : IR.Opcode.STOREF;
+            ir.add(new IR.Node(opcode, focus, var));
+        } catch (MicroException e) {
+            System.out.println("function " + ctx.getChild(2).getText());
+        }
     }
 
     @Override
@@ -137,17 +166,20 @@ public class MicroCustomListener extends MicroBaseListener {
     }
 
     @Override
+    public void enterReturn_stmt(MicroParser.Return_stmtContext ctx) {
+        Variable focus = parseExpr(ctx.getChild(1).getText());
+        IR.Opcode opcode = focus.isInt() ? IR.Opcode.STOREI : IR.Opcode.STOREF;
+        ir.add(new IR.Node(opcode, focus,
+                new Variable(null, focus.getType(), Variable.Context.RETURN)));
+        ir.add(new IR.Node(IR.Opcode.RET));
+    }
+
+    @Override
     public void enterIf_stmt(MicroParser.If_stmtContext ctx) {
         symbolMaps.add(new SymbolMap(nextBlockName()));
         scope.push(symbolMaps.size()-1);
 
         parseCond(ctx.getChild(2), LABEL_PREFIX + labelnum, true);
-        /*
-        ir.add(new IR.Node(
-                IR.Opcode.EQ,
-                new Variable(LABEL_PREFIX + labelnum, Variable.Type.STRING, null)
-        ));
-        */
         lcstack.push(labelnum++);
         iejump.push(new IR.Node(IR.Opcode.JUMP, null));
     }
@@ -156,9 +188,9 @@ public class MicroCustomListener extends MicroBaseListener {
     public void exitIf_stmt(MicroParser.If_stmtContext ctx) {
         ir.add(new IR.Node(
                 IR.Opcode.LABEL,
-                new Variable(LABEL_PREFIX + lcstack.peek(), Variable.Type.STRING, null)
+                new Variable(LABEL_PREFIX + lcstack.peek(), Variable.Type.STRING)
         ));
-        iejump.pop().setFocus(new Variable(LABEL_PREFIX + lcstack.pop(), Variable.Type.STRING, null));
+        iejump.pop().setFocus(new Variable(LABEL_PREFIX + lcstack.pop(), Variable.Type.STRING));
     }
 
     @Override
@@ -171,7 +203,7 @@ public class MicroCustomListener extends MicroBaseListener {
         ir.add(iejump.peek());
         ir.add(new IR.Node(
                 IR.Opcode.LABEL,
-                new Variable(LABEL_PREFIX + lcstack.pop(), Variable.Type.STRING, null)
+                new Variable(LABEL_PREFIX + lcstack.pop(), Variable.Type.STRING)
         ));
 
         lcstack.push(labelnum++);
@@ -190,7 +222,7 @@ public class MicroCustomListener extends MicroBaseListener {
 
         ir.add(new IR.Node(
                 IR.Opcode.LABEL,
-                new Variable(LABEL_PREFIX + labelnum, Variable.Type.STRING, null)
+                new Variable(LABEL_PREFIX + labelnum, Variable.Type.STRING)
         ));
         lcstack.push(labelnum++);
     }
@@ -202,7 +234,7 @@ public class MicroCustomListener extends MicroBaseListener {
     }
 
     public void parseCond(ParseTree cond, String label, boolean opposite) {
-        Variable target = new Variable(label, Variable.Type.STRING, null);
+        Variable target = new Variable(label, Variable.Type.STRING);
 
         switch (cond.getText()) {
             case "TRUE":
@@ -245,7 +277,7 @@ public class MicroCustomListener extends MicroBaseListener {
                 Variable op1 = resolveToken(n.getLeft().getToken());
                 Variable op2 = resolveToken(n.getRight().getToken());
                 Variable.Type exprType = op1.isFloat() || op2.isFloat() ? Variable.Type.FLOAT : Variable.Type.INT;
-                Variable result = new Variable(TEMPREG_PREFIX + operator.getRegister(), exprType, true);
+                Variable result = new Variable(null, exprType, Variable.Context.TEMP, operator.getRegister());
                 ir.add(new IR.Node(IR.parseCalcOp(operator.getValue(), exprType), op1, op2, result));
             }
         });
@@ -261,7 +293,7 @@ public class MicroCustomListener extends MicroBaseListener {
 
         if (var.isConstant()) {
             IR.Opcode opcode = var.isInt() ? IR.Opcode.STOREI : IR.Opcode.STOREF;
-            Variable temp = new Variable(TEMPREG_PREFIX + register++, var.getType(), true);
+            Variable temp = new Variable(null, var.getType(), Variable.Context.TEMP, register++);
             ir.add(new IR.Node(opcode, var, temp));
             return temp;
         }
@@ -271,7 +303,7 @@ public class MicroCustomListener extends MicroBaseListener {
 
     private Variable tokenToVariable(Expression.Token token) {
         if (token.isOperator())
-            return new Variable(TEMPREG_PREFIX + ((Expression.Operator)token).getRegister(), null, true);
+            return new Variable(null, null, Variable.Context.TEMP, ((Expression.Operator)token).getRegister());
 
         return resolveId(token.getValue());
     }

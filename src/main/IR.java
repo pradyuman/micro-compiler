@@ -11,7 +11,8 @@ public class IR extends LinkedList<IR.Node> {
     public enum Opcode {
         ADDI, ADDF, SUBI, SUBF, MULTI, MULTF, DIVI, DIVF,
         STOREI, STOREF, GT, GE, LT, LE, NE, EQ, JUMP, LABEL,
-        READI, READF, WRITEI, WRITEF
+        READI, READF, WRITEI, WRITEF,
+        JSR, PUSH, POP, RET, LINK
     }
 
     public static class Node {
@@ -42,6 +43,11 @@ public class IR extends LinkedList<IR.Node> {
         private Variable op2;
         private Variable focus;
 
+        // LINK RET
+        public Node(Opcode opcode) {
+            this.opcode = opcode;
+        }
+
         // JUMP LABEL READI READF WRITEI WRITEF
         public Node(Opcode opcode, Variable focus) {
             this.opcode = opcode;
@@ -68,11 +74,14 @@ public class IR extends LinkedList<IR.Node> {
 
         @Override
         public String toString() {
-            String s = opcode + " ";
-            if (op1 != null) s += op1.isConstant() ? op1.getValue() + " " : op1.getName() + " ";
-            if (op2 != null) s += op2.isConstant() ? op2.getValue() + " " : op2.getName() + " ";
-            return s + focus.getName();
+            String s = opcode.toString();
+            if (op1 != null) s += " " + op1.getStringRef();
+            if (op2 != null) s += " " + op2.getStringRef();
+            if (focus != null) s += " " + focus.getStringRef();
+            return s;
         }
+
+
 
         public Type getType() {
             if (CalcSet.contains(opcode)) return Type.CALC;

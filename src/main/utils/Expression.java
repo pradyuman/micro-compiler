@@ -1,7 +1,9 @@
 package main.utils;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 import main.MicroErrorMessages;
 import main.MicroException;
 import main.SymbolMap;
@@ -53,10 +55,14 @@ public final class Expression {
             return type == Type.OPERATOR;
         }
 
+        public boolean isVar() {
+            return type == Type.VAR;
+        }
     }
 
     @Data
     @EqualsAndHashCode(callSuper = true)
+    @ToString(callSuper = true)
     public static final class Operator extends Token {
 
         private int precedence;
@@ -84,24 +90,6 @@ public final class Expression {
         public ENode(Token token) {
             super();
             this.token = token;
-            add(null);
-            add(null);
-        }
-
-        public ENode getLeft() {
-            return get(0);
-        }
-
-        public void setLeft(ENode node) {
-            set(0, node);
-        }
-
-        public ENode getRight() {
-            return get(1);
-        }
-
-        public void setRight(ENode node) {
-            set(1, node);
         }
 
         @Override
@@ -112,39 +100,34 @@ public final class Expression {
         }
 
         @Override
-        public void addFirst(ENode n) {
-            if (stream().allMatch(e -> e == null))
-                clear();
-
-            super.addFirst(n);
-        }
-
-        @Override
         public Iterator<ENode> iterator() {
             this.postorder = new LinkedList<>();
 
-            ENode cur = ENode.this;
-            Stack<ENode> stack = new Stack<>();
+            @Data
+            @AllArgsConstructor
+            class ENodeState {
+                private ENode node;
+                private boolean visited;
+            }
+
+            ENodeState state = new ENodeState(ENode.this, false);
+            Deque<ENodeState> stack = new LinkedList<>();
+            stack.push(state);
 
             while (true) {
-                while (cur != null) {
-                    if (cur.getRight() != null) {
-                        stack.push(cur.getRight());
-                    }
-                    stack.push(cur);
-                    cur = cur.getLeft();
+                if (stack.size() == 0) break;
+
+                if (stack.peek().isVisited()) {
+                    this.postorder.add(stack.pop().getNode());
+                    continue;
                 }
 
-                if (stack.empty()) break;
+                state = stack.peek();
+                state.setVisited(true);
+                ENode cur = state.getNode();
 
-                cur = stack.pop();
-                if (!stack.empty() && cur.getRight() != null && cur.getRight() == stack.peek()) {
-                    stack.pop();
-                    stack.push(cur);
-                    cur = cur.getRight();
-                } else {
-                    this.postorder.add(cur);
-                    cur = null;
+                for (int i = cur.size() - 1; i >= 0; i--) {
+                    stack.push(new ENodeState(cur.get(i), cur.get(i).size() == 0));
                 }
             }
 
@@ -250,8 +233,8 @@ public final class Expression {
         postfix.forEach(t -> {
            if (t.isOperator()) {
                ENode n = new ENode(t);
-               n.setRight(stack.pop());
-               n.setLeft(stack.pop());
+               n.addFirst(stack.pop());
+               n.addFirst(stack.pop());
                stack.push(n);
            } else if (t.isFunction()) {
                ENode n = new ENode(t);

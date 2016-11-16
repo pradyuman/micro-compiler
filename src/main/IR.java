@@ -51,7 +51,7 @@ public class IR extends LinkedList<IR.Node> {
             this.opcode = opcode;
         }
 
-        // JUMP LABEL READI READF WRITEI WRITEF
+        // JUMP LABEL READI READF WRITEI WRITEF JSR
         public Node(Opcode opcode, Variable focus) {
             this.opcode = opcode;
             this.focus = focus;

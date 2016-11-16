@@ -119,7 +119,7 @@ public class MicroCustomListener extends MicroBaseListener {
 
         ir.add(new IR.Node(
                 IR.Opcode.LABEL,
-                new Variable(name, Variable.Type.STRING, "")));
+                new Variable(name, Variable.Type.STRING)));
         ir.add(new IR.Node(IR.Opcode.LINK));
     }
 
@@ -137,13 +137,9 @@ public class MicroCustomListener extends MicroBaseListener {
         if (var == null)
             throw new MicroException(MicroErrorMessages.UndefinedVariable);
 
-        try {
-            Variable focus = parseExpr(ctx.getChild(2).getText());
-            IR.Opcode opcode = var.isInt() ? IR.Opcode.STOREI : IR.Opcode.STOREF;
-            ir.add(new IR.Node(opcode, focus, var));
-        } catch (MicroException e) {
-            System.out.println("function " + ctx.getChild(2).getText());
-        }
+        Variable focus = parseExpr(ctx.getChild(2).getText());
+        IR.Opcode opcode = var.isInt() ? IR.Opcode.STOREI : IR.Opcode.STOREF;
+        ir.add(new IR.Node(opcode, focus, var));
     }
 
     @Override
@@ -267,17 +263,22 @@ public class MicroCustomListener extends MicroBaseListener {
         Expression.ENode tree = Expression.generateExpressionTree(postfix);
 
         // Expression is a single constant
-        if (!tree.getToken().isOperator())
+        if (tree.getToken().isVar())
             return resolveToken(tree.getToken());
 
         // Expression includes an operator
         tree.forEach(n -> {
+            if (n.getToken().isFunction()) {
+                ir.add(new IR.Node(IR.Opcode.JSR,
+                        new Variable(n.getToken().getValue(), Variable.Type.STRING)));
+            }
+
             if (n.getToken().isOperator()) {
                 Expression.Operator operator = (Expression.Operator)n.getToken();
                 operator.setRegister(register++);
 
-                Variable op1 = resolveToken(n.getLeft().getToken());
-                Variable op2 = resolveToken(n.getRight().getToken());
+                Variable op1 = resolveToken(n.get(0).getToken());
+                Variable op2 = resolveToken(n.get(1).getToken());
                 Variable.Type exprType = op1.isFloat() || op2.isFloat() ? Variable.Type.FLOAT : Variable.Type.INT;
                 Variable result = new Variable(null, exprType, Variable.Context.TEMP, operator.getRegister());
                 ir.add(new IR.Node(IR.parseCalcOp(operator.getValue(), exprType), op1, op2, result));

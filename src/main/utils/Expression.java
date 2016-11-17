@@ -4,18 +4,22 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
+
+import java.util.ArrayDeque;
+import java.util.Deque;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.stream.IntStream;
 import main.MicroErrorMessages;
 import main.MicroException;
 import main.SymbolMap;
-
-import java.util.*;
-import java.util.stream.IntStream;
 
 public final class Expression {
 
     private Expression() {}
 
     @Data
+    @AllArgsConstructor
     public static class Token {
 
         public enum Type {
@@ -29,14 +33,7 @@ public final class Expression {
         private int numParam;
 
         public Token(Type type, String value) {
-            this.type = type;
-            this.value = value;
-        }
-
-        public Token(Type type, String value, int numParam) {
-            this.type = type;
-            this.value = value;
-            this.numParam = numParam;
+            this(type, value, 0);
         }
 
         public boolean isFunction() {
@@ -213,7 +210,7 @@ public final class Expression {
                     // Pop LParen
                     stack.pop();
 
-                    if (stack.peek().isFunction())
+                    if (stack.size() != 0 && stack.peek().isFunction())
                         postfix.add(stack.pop());
 
                     break;
@@ -231,7 +228,7 @@ public final class Expression {
     }
 
     public static ENode generateExpressionTree(List<Token> postfix) {
-        Stack<ENode> stack = new Stack<>();
+        Deque<ENode> stack = new ArrayDeque<>();
         postfix.forEach(t -> {
            if (t.isOperator()) {
                ENode n = new ENode(t);

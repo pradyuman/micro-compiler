@@ -1,8 +1,10 @@
 package main;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
 
 @Data
+@AllArgsConstructor
 public final class Variable {
 
     private static String FLOCAL_PREFIX = "$L";
@@ -26,38 +28,22 @@ public final class Variable {
 
     // Constant
     public Variable(Type type, String value) {
-        this.ctx = Context.CONSTANT;
-        this.type = type;
-        this.value = value;
-    }
-
-    // Variable with no value
-    public Variable(String name, Type type) {
-        this.ctx = Context.NORMAL;
-        this.name = name;
-        this.type = type;
+        this(Context.CONSTANT, 0, null, type, value);
     }
 
     // Variable with value
     public Variable(String name, Type type, String value) {
-        this.ctx = Context.NORMAL;
-        this.name = name;
-        this.type = type;
-        this.value = value;
+        this(Context.NORMAL, 0, name, type, value);
     }
 
-    // RETURN
-    public Variable(Type type, Context ctx) {
-        this.type = type;
-        this.ctx = ctx;
+    // Variable with no value
+    public Variable(String name, Type type) {
+        this(name, type, null);
     }
 
-    // TEMP FLOCAL FPARAM
-    public Variable(String name, Type type, Context ctx, int ctxVal) {
-        this.name = name;
-        this.type = type;
-        this.ctx = ctx;
-        this.ctxVal = ctxVal;
+    // TEMP FLOCAL FPARAM RETURN
+    public Variable(Context ctx, int ctxVal, String name, Type type) {
+        this(ctx, ctxVal, name, type, null);
     }
 
     @Override
@@ -83,6 +69,10 @@ public final class Variable {
 
     public boolean isFloat() {
         return type == Type.FLOAT;
+    }
+
+    public boolean isString() {
+        return type == Type.STRING;
     }
 
     public boolean isTemp() {

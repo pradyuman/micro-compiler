@@ -1,8 +1,8 @@
 package main;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
 
-import java.util.EnumSet;
 import java.util.LinkedList;
 
 /**
@@ -12,34 +12,14 @@ public class IR extends LinkedList<IR.Node> {
 
     public enum Opcode {
         ADDI, ADDF, SUBI, SUBF, MULTI, MULTF, DIVI, DIVF,
-        STOREI, STOREF, GT, GE, LT, LE, NE, EQ, JUMP, LABEL,
-        READI, READF, WRITEI, WRITEF, WRITES,
-        JSR, PUSH, POP, RET, LINK
+        STOREI, STOREF, GT, GE, LT, LE, NE, EQ,
+        JUMP, LABEL, JSR, PUSH, POP, RET, LINK,
+        READI, READF, WRITEI, WRITEF, WRITES
     }
 
     @Data
+    @AllArgsConstructor
     public static class Node {
-
-        public enum Type {
-            CALC, COMP, STORE, JUMP, LABEL, SYS
-        }
-
-        private static EnumSet<Opcode> CalcSet = EnumSet.of(
-                Opcode.ADDI, Opcode.ADDF, Opcode.SUBI, Opcode.SUBF,
-                Opcode.MULTI, Opcode.MULTF, Opcode.DIVI, Opcode.DIVF
-        );
-
-        private static EnumSet<Opcode> CompSet = EnumSet.of(
-                Opcode.GT, Opcode.GE, Opcode.LT, Opcode.LE, Opcode.NE, Opcode.EQ
-        );
-
-        private static EnumSet<Opcode> StoreSet = EnumSet.of(
-                Opcode.STOREI, Opcode.STOREF
-        );
-
-        private static EnumSet<Opcode> SysSet = EnumSet.of(
-                Opcode.READI, Opcode.READF, Opcode.WRITEI, Opcode.WRITEF
-        );
 
         private Opcode opcode;
         private Variable op1;
@@ -53,26 +33,12 @@ public class IR extends LinkedList<IR.Node> {
 
         // JUMP LABEL READI READF WRITEI WRITEF JSR
         public Node(Opcode opcode, Variable focus) {
-            this.opcode = opcode;
-            this.focus = focus;
+            this(opcode, null, null, focus);
         }
 
         // STOREI STOREF
         public Node(Opcode opcode, Variable op1, Variable focus) {
-            this.opcode = opcode;
-            this.op1 = op1;
-            this.focus = focus;
-        }
-
-        // ADDI ADDF SUBI SUBF MULTI MULTF GT GE LT LE NE EQ
-        public Node(Opcode opcode,
-                    Variable op1,
-                    Variable op2,
-                    Variable focus) {
-            this.opcode = opcode;
-            this.op1 = op1;
-            this.op2 = op2;
-            this.focus = focus;
+            this(opcode, op1, null, focus);
         }
 
         @Override
@@ -84,17 +50,6 @@ public class IR extends LinkedList<IR.Node> {
             return s;
         }
 
-        public Type getType() {
-            if (CalcSet.contains(opcode)) return Type.CALC;
-            if (CompSet.contains(opcode)) return Type.COMP;
-            if (StoreSet.contains(opcode)) return Type.STORE;
-            if (SysSet.contains(opcode)) return Type.SYS;
-            if (opcode == Opcode.JUMP) return Type.JUMP;
-            if (opcode == Opcode.LABEL) return Type.LABEL;
-
-            throw new MicroException(MicroErrorMessages.UnknownIRNodeType);
-        }
-
         public boolean isRet() {
             return opcode == Opcode.RET;
         }
@@ -103,6 +58,14 @@ public class IR extends LinkedList<IR.Node> {
 
     public IR() {
         super();
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder b = new StringBuilder();
+        b.append(String.format(";IR code\n"));
+        stream().map(n -> ";" + n + "\n").forEach(b::append);
+        return b.toString();
     }
 
     public static Opcode parseCalcOp(String operator, Variable.Type type) {

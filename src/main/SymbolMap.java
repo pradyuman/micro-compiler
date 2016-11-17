@@ -1,6 +1,5 @@
 package main;
 
-
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 

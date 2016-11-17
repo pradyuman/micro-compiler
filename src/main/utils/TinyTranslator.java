@@ -1,13 +1,21 @@
 package main.utils;
 
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.IntStream;
+
 import main.IR;
+import main.MicroErrorMessages;
+import main.MicroException;
 import main.SymbolMap;
 import main.Variable;
 
-import java.util.*;
-
 public class TinyTranslator {
 
+    private static final int STACK = 5;
     private static final Map<IR.Opcode, String> dict;
 
     static {
@@ -28,6 +36,11 @@ public class TinyTranslator {
         _dict.put(IR.Opcode.EQ, "jeq");
         _dict.put(IR.Opcode.JUMP, "jmp");
         _dict.put(IR.Opcode.LABEL, "label");
+        _dict.put(IR.Opcode.JSR, "jsr");
+        _dict.put(IR.Opcode.PUSH, "push");
+        _dict.put(IR.Opcode.POP, "pop");
+        _dict.put(IR.Opcode.RET, "ret");
+        _dict.put(IR.Opcode.LINK, "link");
         _dict.put(IR.Opcode.READI, "sys readi");
         _dict.put(IR.Opcode.READF, "sys readr");
         _dict.put(IR.Opcode.WRITEI, "sys writei");
@@ -37,6 +50,28 @@ public class TinyTranslator {
         dict = Collections.unmodifiableMap(_dict);
     }
 
+    private enum Type {
+        GENERIC, CALC, COMP, JSR, RET, STORE
+    }
+
+    private static EnumSet<IR.Opcode> CalcSet = EnumSet.of(
+            IR.Opcode.ADDI, IR.Opcode.ADDF, IR.Opcode.SUBI, IR.Opcode.SUBF,
+            IR.Opcode.MULTI, IR.Opcode.MULTF, IR.Opcode.DIVI, IR.Opcode.DIVF
+    );
+
+    private static EnumSet<IR.Opcode> CompSet = EnumSet.of(
+            IR.Opcode.GT, IR.Opcode.GE, IR.Opcode.LT, IR.Opcode.LE, IR.Opcode.NE, IR.Opcode.EQ
+    );
+
+    private static EnumSet<IR.Opcode> StoreSet = EnumSet.of(
+            IR.Opcode.STOREI, IR.Opcode.STOREF
+    );
+
+    private static EnumSet<IR.Opcode> GenericSet = EnumSet.of(
+            IR.Opcode.JUMP, IR.Opcode.LABEL, IR.Opcode.PUSH, IR.Opcode.POP, IR.Opcode.LINK,
+            IR.Opcode.READI, IR.Opcode.READF, IR.Opcode.WRITEI, IR.Opcode.WRITEF, IR.Opcode.WRITES
+    );
+
     private int register;
     private Map<String, Integer> map;
 
@@ -45,17 +80,34 @@ public class TinyTranslator {
         this.map = new HashMap<>();
     }
 
-    public void printTinyFromIR(List<SymbolMap> symbolMaps, List<IR.Node> ir) {
+    public void printTinyFromIR(SymbolMap globalSymbols, List<IR.Node> ir) {
         System.out.println(";tiny code");
-        symbolMaps.stream().flatMap(m -> m.keySet().stream()).distinct()
-                .forEach(e -> System.out.format("var %s\n", e));
+
+        globalSymbols.values().stream()
+                .map(e -> e.isString() ?
+                        String.format("str %s %s", e.getName(), e.getValue()) :
+                        String.format("var %s", e.getName()))
+                .forEach(System.out::println);
+
+        // Init Main
+        System.out.println("push");
+        pushReg();
+        System.out.println("jsr main");
+        System.out.println("sys halt");
+
         ir.forEach(n -> {
             String op1 = resolveOp(n.getOp1());
             String op2 = resolveOp(n.getOp2());
-            String focus = resolveFocus(n.getFocus());
+            String focus = resolveOp(n.getFocus());
             String command = dict.get(n.getOpcode());
 
-            switch(n.getType()) {
+            switch(getType(n.getOpcode())) {
+                case GENERIC:
+                    if (focus == null)
+                        System.out.format("%s\n", command);
+                    else
+                        System.out.format("%s %s\n", command, focus);
+                    break;
                 case CALC:
                     System.out.format("move %s %s\n", op1, focus);
                     System.out.format("%s %s %s\n", command, op2, focus);
@@ -69,6 +121,15 @@ public class TinyTranslator {
                     System.out.format("%s %s %s\n", comp, op1, op2);
                     System.out.format("%s %s\n", command, focus);
                     break;
+                case JSR:
+                    pushReg();
+                    System.out.format("%s %s\n", command, focus);
+                    popReg();
+                    break;
+                case RET:
+                    System.out.println("unlnk");
+                    System.out.println("ret");
+                    break;
                 case STORE:
                     if (!n.getOp1().isTemp() && !n.getFocus().isTemp()) {
                         System.out.format("move %s r%s\n", op1, ++register);
@@ -77,11 +138,22 @@ public class TinyTranslator {
                     System.out.format("move %s %s\n", op1, focus);
                     break;
                 default:
-                    System.out.format("%s %s\n", command, focus);
+                    throw new MicroException(MicroErrorMessages.UnknownTinyType);
             }
-       });
+        });
 
-        System.out.println("sys halt");
+        System.out.println("end");
+    }
+
+    private Type getType(IR.Opcode opcode) {
+        if (CalcSet.contains(opcode)) return Type.CALC;
+        if (CompSet.contains(opcode)) return Type.COMP;
+        if (StoreSet.contains(opcode)) return Type.STORE;
+        if (GenericSet.contains(opcode)) return Type.GENERIC;
+        if (opcode == IR.Opcode.JSR) return Type.JSR;
+        if (opcode == IR.Opcode.RET) return Type.RET;
+
+        throw new MicroException(MicroErrorMessages.UnknownIRNodeType);
     }
 
     private String resolveComp(Variable op1, Variable op2) {
@@ -95,20 +167,29 @@ public class TinyTranslator {
         if (op == null)
             return null;
 
-        if (op.isTemp())
-            return "r" + map.get(op.getName());
-
-        if (op.isConstant())
-            return op.getValue();
-
-        return op.getName();
+        switch (op.getCtx()) {
+            case CONSTANT:
+                return op.getValue();
+            case TEMP:
+                if (!map.containsKey(op.getRef()))
+                    map.put(op.getRef(), ++register);
+                return "r" + map.get(op.getRef());
+            case FLOCAL:
+                return "$" + Integer.toString(-op.getCtxVal());
+            case FPARAM:
+            case RETURN:
+                return "$" + Integer.toString(STACK + op.getCtxVal());
+            default:
+                return op.getRef();
+        }
     }
 
-    private String resolveFocus(Variable focus) {
-        if (focus.isTemp()) {
-            map.put(focus.getRef(), ++register);
-            return "r" + register;
-        }
-        return focus.getName();
+    private void pushReg() {
+        IntStream.rangeClosed(0, 3).mapToObj(i -> "push r" + i).forEach(System.out::println);
+    }
+
+    private void popReg() {
+        IntStream.rangeClosed(0, 3)
+                .map(i -> 3 - i).mapToObj(i -> "pop r" + i).forEach(System.out::println);
     }
 }

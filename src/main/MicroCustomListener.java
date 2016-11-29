@@ -24,7 +24,7 @@ public class MicroCustomListener extends MicroBaseListener {
     private int labelnum;
     private int register;
     private List<IR.Node> ir;
-    private Deque<Integer> scope;
+    private LinkedList<Integer> scope;
     private Deque<Integer> labelScope;
     private Deque<IR.Node> defer;
     private Deque<Variable> deferParam;
@@ -54,11 +54,10 @@ public class MicroCustomListener extends MicroBaseListener {
     }
 
     private Variable getScopedVariable(String id) {
-        Variable var = symbolMaps.get(scope.peek()).get(id);
-        for (int i = 0; i < scope.size() && var == null; i++) {
-            var = symbolMaps.get(((List<Integer>)scope).get(i)).get(id);
-        }
-        return var;
+        return scope.stream()
+                .map(s -> symbolMaps.get(s).get(id))
+                .filter(s -> s != null)
+                .findFirst().orElse(null);
     }
 
     @Override

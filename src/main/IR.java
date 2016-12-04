@@ -1,9 +1,11 @@
 package main;
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
 
+import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.LinkedList;
+import java.util.List;
 
 /**
  * Intermediate Representation
@@ -17,18 +19,23 @@ public class IR extends LinkedList<IR.Node> {
         READI, READF, WRITEI, WRITEF, WRITES
     }
 
+    private static EnumSet<Opcode> Conditional = EnumSet.of(
+            Opcode.GT, Opcode.GE, Opcode.LT, Opcode.LE, Opcode.NE, Opcode.EQ
+    );
+
     @Data
-    @AllArgsConstructor
     public static class Node {
 
         private Opcode opcode;
         private Variable op1;
         private Variable op2;
         private Variable focus;
+        private List<Node> predecessors;
+        private List<Node> successors;
 
         // LINK RET JUMP-PREINIT PUSH POP
         public Node(Opcode opcode) {
-            this.opcode = opcode;
+            this(opcode, null, null, null);
         }
 
         // JUMP LABEL READI READF WRITEI WRITEF JSR
@@ -41,6 +48,15 @@ public class IR extends LinkedList<IR.Node> {
             this(opcode, op1, null, focus);
         }
 
+        public Node(Opcode opcode, Variable op1, Variable op2, Variable focus) {
+            this.opcode = opcode;
+            this.op1 = op1;
+            this.op2 = op2;
+            this.focus = focus;
+            this.predecessors = new ArrayList<>();
+            this.successors = new ArrayList<>();
+        }
+
         @Override
         public String toString() {
             String s = opcode.toString();
@@ -48,6 +64,14 @@ public class IR extends LinkedList<IR.Node> {
             if (op2 != null) s += " " + op2.getRef();
             if (focus != null) s += " " + focus.getRef();
             return s;
+        }
+
+        public boolean isConditional() {
+            return Conditional.contains(opcode);
+        }
+
+        public boolean isJump() {
+            return opcode == Opcode.JUMP;
         }
 
         public boolean isRet() {
@@ -63,8 +87,16 @@ public class IR extends LinkedList<IR.Node> {
     @Override
     public String toString() {
         StringBuilder b = new StringBuilder();
-        b.append(String.format(";IR code\n"));
+        b.append(";IR code\n");
         stream().map(n -> ";" + n + "\n").forEach(b::append);
+        return b.toString();
+    }
+
+    public String cfgToString() {
+        StringBuilder b = new StringBuilder();
+        b.append(";IR CFG\n");
+        stream().map(n -> n + ":\n;Predecessors:" + n.getPredecessors() + "\nSuccessors:" + n.getSuccessors() + "\n\n")
+                .forEach(b::append);
         return b.toString();
     }
 
@@ -79,7 +111,7 @@ public class IR extends LinkedList<IR.Node> {
             case "/":
                 return type == Variable.Type.INT ? Opcode.DIVI : Opcode.DIVF;
             default:
-                throw new MicroException(MicroErrorMessages.UnknownCalcOp);
+                throw new MicroRuntimeException(MicroErrorMessages.UnknownCalcOp);
         }
     }
 
@@ -98,7 +130,7 @@ public class IR extends LinkedList<IR.Node> {
             case "=":
                 return opposite ? Opcode.NE : Opcode.EQ;
             default:
-                throw new MicroException(MicroErrorMessages.UnknownCompOp);
+                throw new MicroRuntimeException(MicroErrorMessages.UnknownCompOp);
         }
     }
 

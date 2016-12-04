@@ -11,7 +11,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.IntStream;
 import main.MicroErrorMessages;
-import main.MicroException;
+import main.MicroRuntimeException;
 import main.SymbolMap;
 
 public final class Expression {
@@ -187,7 +187,7 @@ public final class Expression {
                     }
 
                     if (!top.isLParen())
-                        throw new MicroException(MicroErrorMessages.MismatchedParentheses);
+                        throw new MicroRuntimeException(MicroErrorMessages.MismatchedParentheses);
 
                     break;
                 case OPERATOR:
@@ -205,7 +205,7 @@ public final class Expression {
                         postfix.add(stack.pop());
 
                     if (!stack.peek().isLParen())
-                        throw new MicroException(MicroErrorMessages.MismatchedParentheses);
+                        throw new MicroRuntimeException(MicroErrorMessages.MismatchedParentheses);
 
                     // Pop LParen
                     stack.pop();
@@ -219,7 +219,7 @@ public final class Expression {
 
         while (stack.peek() != null) {
             if (stack.peek().isLParen() || stack.peek().isRParen())
-                throw new MicroException(MicroErrorMessages.MismatchedParentheses);
+                throw new MicroRuntimeException(MicroErrorMessages.MismatchedParentheses);
 
             postfix.add(stack.pop());
         }

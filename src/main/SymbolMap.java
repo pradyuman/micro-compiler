@@ -37,7 +37,7 @@ public final class SymbolMap extends LinkedHashMap<String, Variable> {
     @Override
     public Variable put(String name, Variable v) {
         if (containsKey(v.getName())) {
-            throw new MicroException(MicroErrorMessages.DuplicateDeclaration + ": " + v.getName());
+            throw new MicroRuntimeException(MicroErrorMessages.DuplicateDeclaration + ": " + v.getName());
         }
         return super.put(name, v);
     }

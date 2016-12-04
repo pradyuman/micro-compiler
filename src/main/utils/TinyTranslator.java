@@ -9,7 +9,7 @@ import java.util.stream.IntStream;
 
 import main.IR;
 import main.MicroErrorMessages;
-import main.MicroException;
+import main.MicroRuntimeException;
 import main.SymbolMap;
 import main.Variable;
 
@@ -138,7 +138,7 @@ public class TinyTranslator {
                     System.out.format("move %s %s\n", op1, focus);
                     break;
                 default:
-                    throw new MicroException(MicroErrorMessages.UnknownTinyType);
+                    throw new MicroRuntimeException(MicroErrorMessages.UnknownTinyType);
             }
         });
 
@@ -153,7 +153,7 @@ public class TinyTranslator {
         if (opcode == IR.Opcode.JSR) return Type.JSR;
         if (opcode == IR.Opcode.RET) return Type.RET;
 
-        throw new MicroException(MicroErrorMessages.UnknownIRNodeType);
+        throw new MicroRuntimeException(MicroErrorMessages.UnknownIRNodeType);
     }
 
     private String resolveComp(Variable op1, Variable op2) {

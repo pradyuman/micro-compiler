@@ -10,7 +10,7 @@ public class Micro {
         public MicroFailFastLexer(CharStream input) { super(input); }
 
         public void recover(LexerNoViableAltException e) {
-            throw new MicroException(e);
+            throw new MicroRuntimeException(e);
         }
 
     }
@@ -28,9 +28,9 @@ public class Micro {
             ParseTreeWalker walker = new ParseTreeWalker();
             MicroCustomListener listener = new MicroCustomListener();
             walker.walk(listener, microProgramContext);
-        } catch (MicroException e) {
-            e.printStackTrace();
+        } catch (MicroRuntimeException e) {
             System.out.println(e.getMessage());
+            e.printStackTrace();
         }
     }
 

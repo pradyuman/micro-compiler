@@ -6,17 +6,17 @@ public class MicroErrorStrategy extends DefaultErrorStrategy {
 
     @Override
     public void recover(Parser recognizer, RecognitionException e) {
-        throw new MicroException(e);
+        throw new MicroRuntimeException(e);
     }
 
     @Override
     public Token recoverInline(Parser recognizer) throws RecognitionException {
-        throw new MicroException();
+        throw new MicroRuntimeException();
     }
 
     @Override
     public void reportError(Parser recognizer, RecognitionException e) {
-        throw new MicroException();
+        throw new MicroRuntimeException();
     }
 
     @Override

@@ -104,7 +104,7 @@ public final class Variable {
             case RETURN:
                 return RETURN;
             default:
-                throw new MicroException(MicroErrorMessages.UnknownVariableContext);
+                throw new MicroRuntimeException(MicroErrorMessages.UnknownVariableContext);
         }
     }
 }

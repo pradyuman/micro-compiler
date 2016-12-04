@@ -1,16 +1,16 @@
 package main;
 
-public class MicroException extends RuntimeException {
+public class MicroRuntimeException extends RuntimeException {
 
-    public MicroException() { super(); }
+    public MicroRuntimeException() { super(); }
 
-    public MicroException(String message) { super(message); }
+    public MicroRuntimeException(String message) { super(message); }
 
-    public MicroException(String message, String... state) {
+    public MicroRuntimeException(String message, String... state) {
         this(message + appendStateToMessage(state));
     }
 
-    public MicroException(Throwable e) { super(e); }
+    public MicroRuntimeException(Throwable e) { super(e); }
 
     private static String appendStateToMessage(String... state) {
         String message = "";

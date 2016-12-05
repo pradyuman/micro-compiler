@@ -1,6 +1,5 @@
 package main;
 
-import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -9,6 +8,7 @@ import java.util.*;
 /**
  * Intermediate Representation
  */
+@Setter
 public class IR extends LinkedList<IR.Node> {
 
     public enum Opcode {
@@ -92,6 +92,8 @@ public class IR extends LinkedList<IR.Node> {
         super();
     }
 
+    SymbolMap globalSymbolMap;
+
     @Override
     public String toString() {
         StringBuilder b = new StringBuilder();
@@ -108,19 +110,19 @@ public class IR extends LinkedList<IR.Node> {
         return b.toString();
     }
 
-    public String genAndKillToString() {
+    public String setsToString() {
         StringBuilder b = new StringBuilder();
-        b.append("IR GEN and KILL sets\n");
-        stream().map(n -> n + ":\nGEN:" + n.getGen() + "\nKILL:" + n.getKill() + "\n\n")
-                .forEach(b::append);
-        return b.toString();
-    }
-
-    public String inAndOutToString() {
-        StringBuilder b = new StringBuilder();
-        b.append("IR IN and OUT sets\n");
-        stream().map(n -> n + ":\nIN:" + n.getIn() + "\nOUT:" + n.getOut() + "\n\n")
-                .forEach(b::append);
+        b.append("IR GEN KILL IN OUT\n");
+        stream().map(n -> {
+            String s = n + ":\n";
+            s += "PRE: " + n.getPredecessors() + "\n";
+            s += "SUC: " + n.getSuccessors() + "\n";
+            s += "GEN: " + n.getGen() + "\n";
+            s += "KILL: " + n.getKill() + "\n";
+            s += "IN: " + n.getIn() + "\n";
+            s += "OUT: " + n.getOut() + "\n\n";
+            return s;
+        }).forEach(b::append);
         return b.toString();
     }
 
@@ -166,36 +168,47 @@ public class IR extends LinkedList<IR.Node> {
     }
 
     private void generateGenAndKill(IR.Node node) {
+        boolean op1Valid = node.getOp1() != null && !node.getOp1().isConstant();
+        boolean op2Valid = node.getOp2() != null && !node.getOp2().isConstant();
+        boolean focusValid = node.getFocus() != null && !node.getFocus().isConstant();
+
         switch(node.getOpcode()) {
+            case LABEL:
+            case LINK:
+                return;
+            case PUSH:
+            case WRITEI:
+            case WRITEF:
+            case WRITES:
+                if (focusValid)
+                    node.gen.add(node.getFocus());
+                return;
+            case POP:
+            case READI:
+            case READF:
+                if (focusValid);
+                    node.kill.add(node.getFocus());
+                return;
+            case JSR:
+                globalSymbolMap.values().stream().forEach(node.gen::add);
+                return;
             case GT:
             case GE:
             case LT:
             case LE:
             case NE:
             case EQ:
-            case LABEL:
-                return;
-            case PUSH:
-            case WRITEI:
-            case WRITEF:
-            case WRITES:
-                if (node.getFocus() != null && !node.getFocus().isConstant())
-                    node.gen.add(node.getFocus());
-                return;
-            case POP:
-            case READI:
-            case READF:
-                if (node.getFocus() != null && !node.getFocus().isConstant())
-                    node.kill.add(node.getFocus());
-                return;
-            case JSR:
+                if (op1Valid)
+                    node.gen.add(node.getOp1());
+                if (op2Valid)
+                    node.gen.add(node.getOp2());
                 return;
             default:
-                if (node.getOp1() != null && !node.getOp1().isConstant())
+                if (op1Valid)
                     node.gen.add(node.getOp1());
-                if (node.getOp2() != null && !node.getOp2().isConstant())
+                if (op2Valid)
                     node.gen.add(node.getOp2());
-                if(node.getFocus() != null)
+                if (focusValid)
                     node.kill.add(node.getFocus());
                 return;
         }

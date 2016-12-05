@@ -87,15 +87,20 @@ public class MicroCompiler extends MicroBaseListener {
     public void enterPgm_body(MicroParser.Pgm_bodyContext ctx) {
         scope.push(0);
         symbolMaps.add(new SymbolMap(GLOBAL));
+        ir.setGlobalSymbolMap(lastMap());
     }
 
     @Override
     public void exitPgm_body(MicroParser.Pgm_bodyContext ctx) {
         generateCFG();
         generateInAndOut();
+        System.out.println(ir.setsToString());
+        //System.out.println(ir.cfgToString());
+        /*
         System.out.println(ir);
         TinyTranslator tt = new TinyTranslator();
         tt.printTinyFromIR(symbolMaps.get(0), ir);
+        */
     }
 
     private void generateCFG() {
@@ -118,14 +123,10 @@ public class MicroCompiler extends MicroBaseListener {
     private void generateInAndOut() {
         IntStream.range(0, ir.size()).map(i -> ir.size() - i - 1).forEach(i -> {
             IR.Node node = ir.get(i);
-            IR.Node next = getNextIRNode(i);
 
-            // Generate In
-            if (next != null) {
-                next.getSuccessors().stream()
-                        .map(s -> s.getIn())
-                        .forEach(node.getOut()::addAll);
-            }
+            node.getSuccessors().stream()
+                    .map(s -> s.getIn())
+                    .forEach(node.getOut()::addAll);
 
             // Generate Out
             Set<Variable> outCopy = new HashSet<>(node.getOut());

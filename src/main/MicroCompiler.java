@@ -363,13 +363,13 @@ public class MicroCompiler extends MicroBaseListener {
 
         // Expression is a single constant
         if (tree.getToken().isVar())
-            return resolveToken(tree.getToken());
+            return resolveENode(tree);
 
         // Expression includes an operator
         tree.postorder().forEach(n -> {
             if (n.getToken().isFunction()) {
                 ir.add(new IR.Node(IR.Opcode.PUSH));
-                n.forEach(p -> ir.add(new IR.Node(IR.Opcode.PUSH, resolveToken(p.getToken()))));
+                n.forEach(p -> ir.add(new IR.Node(IR.Opcode.PUSH, resolveENode(p))));
                 ir.add(new IR.Node(IR.Opcode.JSR,
                         new Variable(n.getToken().getValue(), Variable.Type.STRING)));
                 n.forEach(p -> ir.add(new IR.Node(IR.Opcode.POP)));
@@ -381,8 +381,8 @@ public class MicroCompiler extends MicroBaseListener {
                 Expression.Operator operator = (Expression.Operator)n.getToken();
                 operator.setRegister(register++);
 
-                Variable op1 = resolveToken(n.get(0).getToken());
-                Variable op2 = resolveToken(n.get(1).getToken());
+                Variable op1 = resolveENode(n.get(0));
+                Variable op2 = resolveENode(n.get(1));
                 Variable.Type exprType = op1.isFloat() || op2.isFloat() ? Variable.Type.FLOAT : Variable.Type.INT;
                 Variable result = new Variable(Variable.Context.TEMP, operator.getRegister(), null, exprType);
                 ir.add(new IR.Node(IR.parseCalcOp(operator.getValue(), exprType), op1, op2, result));
@@ -392,8 +392,11 @@ public class MicroCompiler extends MicroBaseListener {
         return ir.get(ir.size() - 1).getFocus();
     }
 
-    private Variable resolveToken(Expression.Token token) {
-        Variable var = tokenToVariable(token);
+    private Variable resolveENode(Expression.ENode node) {
+        if (node.getToken().isFunction())
+            return resolveFunction(node);
+
+        Variable var = tokenToVariable(node.getToken());
         if (var == null)
             throw new MicroRuntimeException(MicroErrorMessages.UndefinedVariable);
 
@@ -405,6 +408,18 @@ public class MicroCompiler extends MicroBaseListener {
         }
 
         return var;
+    }
+
+    private Variable resolveFunction(Expression.ENode node) {
+        ir.add(new IR.Node(IR.Opcode.PUSH));
+        node.forEach(p -> ir.add(new IR.Node(IR.Opcode.PUSH, resolveENode(p))));
+        ir.add(new IR.Node(IR.Opcode.JSR,
+                new Variable(node.getToken().getValue(), Variable.Type.STRING)));
+        node.forEach(p -> ir.add(new IR.Node(IR.Opcode.POP)));
+        ir.add(new IR.Node(IR.Opcode.POP,
+                new Variable(Variable.Context.TEMP, register++, null, null)));
+
+        return ir.get(ir.size() - 1).getFocus();
     }
 
     private Variable tokenToVariable(Expression.Token token) {

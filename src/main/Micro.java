@@ -26,8 +26,8 @@ public class Micro {
 
             MicroParser.ProgramContext microProgramContext = parser.program();
             ParseTreeWalker walker = new ParseTreeWalker();
-            MicroCustomListener listener = new MicroCustomListener();
-            walker.walk(listener, microProgramContext);
+            MicroCompiler compiler = new MicroCompiler();
+            walker.walk(compiler, microProgramContext);
         } catch (MicroRuntimeException e) {
             System.out.println(e.getMessage());
             e.printStackTrace();

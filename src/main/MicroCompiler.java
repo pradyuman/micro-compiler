@@ -7,7 +7,7 @@ import main.utils.Expression;
 import main.utils.TinyTranslator;
 import org.antlr.v4.runtime.tree.ParseTree;
 
-public class MicroCustomListener extends MicroBaseListener {
+public class MicroCompiler extends MicroBaseListener {
 
     private static final String BLOCK = "BLOCK";
     private static final String GLOBAL = "GLOBAL";
@@ -52,7 +52,7 @@ public class MicroCustomListener extends MicroBaseListener {
     // Program symbol maps
     private List<SymbolMap> symbolMaps;
 
-    public MicroCustomListener() {
+    public MicroCompiler() {
         this.inFunction = false;
         this.flocalnum = 1;
         this.fparamnum = 0;
@@ -92,6 +92,7 @@ public class MicroCustomListener extends MicroBaseListener {
     @Override
     public void exitPgm_body(MicroParser.Pgm_bodyContext ctx) {
         generateCFG();
+        System.out.println(ir.genAndKillToSting());
         System.out.println(ir);
         TinyTranslator tt = new TinyTranslator();
         tt.printTinyFromIR(symbolMaps.get(0), ir);

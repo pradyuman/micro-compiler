@@ -1,11 +1,10 @@
 package main;
 
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
-import java.util.ArrayList;
-import java.util.EnumSet;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 
 /**
  * Intermediate Representation
@@ -23,19 +22,22 @@ public class IR extends LinkedList<IR.Node> {
             Opcode.GT, Opcode.GE, Opcode.LT, Opcode.LE, Opcode.NE, Opcode.EQ
     );
 
-    @Data
+    @Getter
+    @Setter
     public static class Node {
 
         private Opcode opcode;
         private Variable op1;
         private Variable op2;
         private Variable focus;
-        private List<Node> predecessors;
-        private List<Node> successors;
-        private List<Variable> gen;
-        private List<Variable> kill;
+        private Set<Node> predecessors;
+        private Set<Node> successors;
+        private Set<Variable> gen;
+        private Set<Variable> kill;
+        private Set<Variable> in;
+        private Set<Variable> out;
 
-        // LINK RET JUMP-PREINIT PUSH POP
+        // LINK RET JUMP-DEFER PUSH POP
         public Node(Opcode opcode) {
             this(opcode, null, null, null);
         }
@@ -55,10 +57,12 @@ public class IR extends LinkedList<IR.Node> {
             this.op1 = op1;
             this.op2 = op2;
             this.focus = focus;
-            this.predecessors = new ArrayList<>(2);
-            this.successors = new ArrayList<>(2);
-            this.gen = new ArrayList<>(2);
-            this.kill = new ArrayList<>(2);
+            this.predecessors = new HashSet<>(2);
+            this.successors = new HashSet<>(2);
+            this.gen = new HashSet<>(2);
+            this.kill = new HashSet<>(2);
+            this.in = new HashSet<>(2);
+            this.out = new HashSet<>(2);
         }
 
         @Override
@@ -99,15 +103,23 @@ public class IR extends LinkedList<IR.Node> {
     public String cfgToString() {
         StringBuilder b = new StringBuilder();
         b.append("IR CFG\n");
-        stream().map(n -> n + ":\n;Predecessors:" + n.getPredecessors() + "\nSuccessors:" + n.getSuccessors() + "\n\n")
+        stream().map(n -> n + ":\nPredecessors:" + n.getPredecessors() + "\nSuccessors:" + n.getSuccessors() + "\n\n")
                 .forEach(b::append);
         return b.toString();
     }
 
-    public String genAndKillToSting() {
+    public String genAndKillToString() {
         StringBuilder b = new StringBuilder();
         b.append("IR GEN and KILL sets\n");
         stream().map(n -> n + ":\nGEN:" + n.getGen() + "\nKILL:" + n.getKill() + "\n\n")
+                .forEach(b::append);
+        return b.toString();
+    }
+
+    public String inAndOutToString() {
+        StringBuilder b = new StringBuilder();
+        b.append("IR IN and OUT sets\n");
+        stream().map(n -> n + ":\nIN:" + n.getIn() + "\nOUT:" + n.getOut() + "\n\n")
                 .forEach(b::append);
         return b.toString();
     }
@@ -155,6 +167,14 @@ public class IR extends LinkedList<IR.Node> {
 
     private void generateGenAndKill(IR.Node node) {
         switch(node.getOpcode()) {
+            case GT:
+            case GE:
+            case LT:
+            case LE:
+            case NE:
+            case EQ:
+            case LABEL:
+                return;
             case PUSH:
             case WRITEI:
             case WRITEF:
@@ -168,14 +188,7 @@ public class IR extends LinkedList<IR.Node> {
                 if (node.getFocus() != null && !node.getFocus().isConstant())
                     node.kill.add(node.getFocus());
                 return;
-            case GT:
-            case GE:
-            case LT:
-            case LE:
-            case NE:
-            case EQ:
             case JSR:
-            case LABEL:
                 return;
             default:
                 if (node.getOp1() != null && !node.getOp1().isConstant())

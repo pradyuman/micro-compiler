@@ -92,7 +92,7 @@ public class MicroCompiler extends MicroBaseListener {
     @Override
     public void exitPgm_body(MicroParser.Pgm_bodyContext ctx) {
         generateCFG();
-        System.out.println(ir.genAndKillToSting());
+        generateInAndOut();
         System.out.println(ir);
         TinyTranslator tt = new TinyTranslator();
         tt.printTinyFromIR(symbolMaps.get(0), ir);
@@ -112,6 +112,26 @@ public class MicroCompiler extends MicroBaseListener {
             } else if (!node.isRet()) {
                 resolveCFGInfo(node, next);
             }
+        });
+    }
+
+    private void generateInAndOut() {
+        IntStream.range(0, ir.size()).map(i -> ir.size() - i - 1).forEach(i -> {
+            IR.Node node = ir.get(i);
+            IR.Node next = getNextIRNode(i);
+
+            // Generate In
+            if (next != null) {
+                next.getSuccessors().stream()
+                        .map(s -> s.getIn())
+                        .forEach(node.getOut()::addAll);
+            }
+
+            // Generate Out
+            Set<Variable> outCopy = new HashSet<>(node.getOut());
+            outCopy.removeAll(node.getKill());
+            node.getIn().addAll(outCopy);
+            node.getIn().addAll(node.getGen());
         });
     }
 

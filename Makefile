@@ -27,7 +27,7 @@ download:
 run-tiny:
 	lib/tiny $(FILE).test > $(FILE).tout
 check-tiny:
-	bash -c 'diff -b -B <(head -n 1 $(FILE).tout) <(head -n 1 $(FILE).tinyout)'
+	bash -c 'diff -b -B <(head -n 1 $(IFILE)) <(head -n 1 $(CFILE))'
 test: run check
 testall:
 	./scripts/testall.sh

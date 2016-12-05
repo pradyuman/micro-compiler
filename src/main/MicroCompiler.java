@@ -5,6 +5,7 @@ import java.util.stream.IntStream;
 
 import main.utils.Expression;
 import main.utils.TinyTranslator;
+import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
 
 public class MicroCompiler extends MicroBaseListener {
@@ -224,10 +225,7 @@ public class MicroCompiler extends MicroBaseListener {
 
     @Override
     public void enterAssign_expr(MicroParser.Assign_exprContext ctx) {
-        Variable var = getScopedVariable(ctx.getChild(0).getText());
-        if (var == null)
-            throw new MicroRuntimeException(MicroErrorMessages.UndefinedVariable);
-
+        Variable var = getVariableSafely(ctx, ctx.getChild(0).getText());
         Variable focus = parseExpr(ctx.getChild(2).getText());
         IR.Opcode opcode = var.isInt() ? IR.Opcode.STOREI : IR.Opcode.STOREF;
         ir.add(new IR.Node(opcode, focus, var));
@@ -236,10 +234,7 @@ public class MicroCompiler extends MicroBaseListener {
     @Override
     public void enterRead_stmt(MicroParser.Read_stmtContext ctx) {
         for (String s : ctx.getChild(2).getText().split(",")) {
-            Variable var = getScopedVariable(s);
-            if (var == null)
-                throw new MicroRuntimeException(MicroErrorMessages.UndefinedVariable);
-
+            Variable var = getVariableSafely(ctx, s);
             IR.Opcode opcode = var.isInt() ? IR.Opcode.READI : IR.Opcode.READF;
             ir.add(new IR.Node(opcode, var));
         }
@@ -248,11 +243,8 @@ public class MicroCompiler extends MicroBaseListener {
     @Override
     public void enterWrite_stmt(MicroParser.Write_stmtContext ctx) {
         for (String s : ctx.getChild(2).getText().split(",")) {
-            Variable var = getScopedVariable(s);
-            if (var == null)
-                throw new MicroRuntimeException(MicroErrorMessages.UndefinedVariable);
-
             IR.Opcode opcode;
+            Variable var = getVariableSafely(ctx, s);
             switch (var.getType()) {
                 case INT:
                     opcode = IR.Opcode.WRITEI; break;
@@ -264,6 +256,15 @@ public class MicroCompiler extends MicroBaseListener {
 
             ir.add(new IR.Node(opcode, var));
         }
+    }
+
+    private Variable getVariableSafely(ParserRuleContext ctx, String name) {
+        Variable var = getScopedVariable(name);
+        if (var == null) {
+            String meta = " " + name + " (" + ctx.getStart().getLine() + ")";
+            throw new MicroRuntimeException(MicroErrorMessages.UndefinedVariable + meta);
+        }
+        return var;
     }
 
     @Override

@@ -11,12 +11,12 @@ do
     fi
 
     FILE=$(echo "$file" | cut -d"." -f1)
-    make run FILE=$FILE
+    make run FILE=testcases/input/$FILE
     if [ "$1" = "-v" ]; then
         echo "$file check:"
     fi
-    make run-tiny FILE=$FILE < testcases/input/$FILE.input
-    make check-tiny FILE=$FILE
+    make run-tiny FILE=testcases/input/$FILE < testcases/input/$FILE.input
+    make check-tiny IFILE=testcases/input/$FILE CFILE=testcases/output/$FILE
 done
 
 rm testcases_step5.tar.gz

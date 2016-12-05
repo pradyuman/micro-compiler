@@ -186,7 +186,7 @@ public class IR extends LinkedList<IR.Node> {
             case POP:
             case READI:
             case READF:
-                if (focusValid);
+                if (focusValid)
                     node.kill.add(node.getFocus());
                 return;
             case JSR:

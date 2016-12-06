@@ -3,7 +3,6 @@ package main.utils;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.stream.IntStream;
 
@@ -51,7 +50,7 @@ public class TinyTranslator {
     }
 
     private enum Type {
-        GENERIC, CALC, COMP, JSR, RET, STORE
+        GENERIC, CALC, COMP, JSR, RET, STORE, LINK
     }
 
     private static EnumSet<IR.Opcode> CalcSet = EnumSet.of(
@@ -72,6 +71,10 @@ public class TinyTranslator {
             IR.Opcode.READI, IR.Opcode.READF, IR.Opcode.WRITEI, IR.Opcode.WRITEF, IR.Opcode.WRITES
     );
 
+    private static EnumSet<IR.Opcode> IgnoreRASet = EnumSet.of(
+            IR.Opcode.LINK, IR.Opcode.LABEL, IR.Opcode.JSR
+    );
+
     private int register;
     private Map<String, Integer> map;
 
@@ -80,10 +83,13 @@ public class TinyTranslator {
         this.map = new HashMap<>();
     }
 
-    public void printTinyFromIR(SymbolMap globalSymbols, List<IR.Node> ir) {
+    public void printTinyFromIR(SymbolMap globalSymbolMap, IR ir) {
         System.out.println(";tiny code");
 
-        globalSymbols.values().stream()
+        IR tinyIR = transformIRtoTinyIR(ir, globalSymbolMap);
+        System.out.println(tinyIR);
+
+        globalSymbolMap.values().stream()
                 .map(e -> e.isString() ?
                         String.format("str %s %s", e.getName(), e.getValue()) :
                         String.format("var %s", e.getName()))
@@ -95,13 +101,16 @@ public class TinyTranslator {
         System.out.println("jsr main");
         System.out.println("sys halt");
 
-        ir.forEach(n -> {
+        tinyIR.forEach(n -> {
             String op1 = resolveOp(n.getOp1());
             String op2 = resolveOp(n.getOp2());
             String focus = resolveOp(n.getFocus());
             String command = dict.get(n.getOpcode());
 
             switch(getType(n.getOpcode())) {
+                case LINK:
+                    System.out.println("link 300");
+                    break;
                 case GENERIC:
                     if (focus == null)
                         System.out.format("%s\n", command);
@@ -114,10 +123,11 @@ public class TinyTranslator {
                     break;
                 case COMP:
                     String comp = resolveComp(n.getOp1(), n.getOp2());
+                    /*
                     if (!n.getOp2().isTemp()) {
                         System.out.format("move %s r%s\n", op2, ++register);
                         op2 = "r" + register;
-                    }
+                    }*/
                     System.out.format("%s %s %s\n", comp, op1, op2);
                     System.out.format("%s %s\n", command, focus);
                     break;
@@ -145,7 +155,44 @@ public class TinyTranslator {
         System.out.println("end");
     }
 
+    private IR transformIRtoTinyIR(IR ir, SymbolMap globalSymbolMap) {
+        IR tinyIR = new IR();
+        tinyIR.setGlobalSymbolMap(globalSymbolMap);
+        RegisterFile rf = new RegisterFile(4);
+
+        int localnum = 0;
+        for (IR.Node n : ir) {
+            RegisterFile.Register rx, ry, rz;
+            Variable tOp1 = n.getOp1(), tOp2 = n.getOp2(), tFocus = n.getFocus();
+            if (n.getOpcode() == IR.Opcode.LINK)
+                localnum = n.getFocus().getCtxVal();
+
+            if (!IgnoreRASet.contains(n.getOpcode())) {
+                if (n.getOp1() != null && !n.getOp1().isConstant()) {
+                    rx = rf.ensure(n.getOp1(), n, tinyIR, localnum);
+                    rf.free(n.getOp1(), rx, tinyIR, n.getOut(), localnum, false);
+                    tOp1 = new Variable(Variable.Context.TEMP, rx.getId(), null, null);
+                }
+
+                if (n.getOp2() != null && !n.getOp2().isConstant()) {
+                    ry = rf.ensure(n.getOp2(), n, tinyIR, localnum);
+                    rf.free(n.getOp1(), ry, tinyIR, n.getOut(), localnum, false);
+                    tOp2 = new Variable(Variable.Context.TEMP, ry.getId(), null, null);
+                }
+
+                if (n.getFocus() != null && !CompSet.contains(n.getOpcode())) {
+                    rz = rf.ensure(n.getFocus(), n, tinyIR, localnum);
+                    tFocus = new Variable(Variable.Context.TEMP, rz.getId(), null, null);
+                }
+            }
+
+            tinyIR.add(new IR.Node(n.getOpcode(), tOp1, tOp2, tFocus));
+        }
+        return tinyIR;
+    }
+
     private Type getType(IR.Opcode opcode) {
+        if (opcode == IR.Opcode.LINK) return Type.LINK;
         if (CalcSet.contains(opcode)) return Type.CALC;
         if (CompSet.contains(opcode)) return Type.COMP;
         if (StoreSet.contains(opcode)) return Type.STORE;

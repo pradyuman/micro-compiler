@@ -41,6 +41,11 @@ public final class Variable {
         this(name, type, null);
     }
 
+    // Link has ctxVal
+    public Variable(int ctxVal, String name, Type type) {
+        this(Context.NORMAL, ctxVal, name, type);
+    }
+
     // TEMP FLOCAL FPARAM RETURN
     public Variable(Context ctx, int ctxVal, String name, Type type) {
         this(ctx, ctxVal, name, type, null);
@@ -57,6 +62,7 @@ public final class Variable {
             s += " name " + name;
 
         return s + " ref " + getRef();
+        //return getRef();
     }
 
     public boolean isConstant() {

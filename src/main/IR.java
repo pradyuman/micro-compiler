@@ -61,8 +61,8 @@ public class IR extends LinkedList<IR.Node> {
             this.successors = new HashSet<>(2);
             this.gen = new HashSet<>(2);
             this.kill = new HashSet<>(2);
-            this.in = new HashSet<>(2);
-            this.out = new HashSet<>(2);
+            this.in = new LinkedHashSet<>(2);
+            this.out = new LinkedHashSet<>(2);
         }
 
         @Override

@@ -94,7 +94,7 @@ public class MicroCompiler extends MicroBaseListener {
     @Override
     public void exitPgm_body(MicroParser.Pgm_bodyContext ctx) {
         generateCFG();
-        generateInAndOut();
+        while (!generateInAndOut());
         System.out.println(ir);
         TinyTranslator tt = new TinyTranslator();
         tt.printTinyFromIR(symbolMaps.get(0), ir);
@@ -117,9 +117,12 @@ public class MicroCompiler extends MicroBaseListener {
         });
     }
 
-    private void generateInAndOut() {
-        IntStream.range(0, ir.size()).map(i -> ir.size() - i - 1).forEach(i -> {
+    private boolean generateInAndOut() {
+        boolean converged = true;
+        for (int i = ir.size() - 1; i >= 0; i--) {
             IR.Node node = ir.get(i);
+            Set<Variable> curIn = new LinkedHashSet<>(node.getIn());
+            Set<Variable> curOut = new LinkedHashSet<>(node.getOut());
 
             if (node.isRet() && i != ir.size() - 1)
                 symbolMaps.get(0).values().stream().forEach(node.getOut()::add);
@@ -134,7 +137,11 @@ public class MicroCompiler extends MicroBaseListener {
             outCopy.removeAll(node.getKill());
             node.getIn().addAll(outCopy);
             node.getIn().addAll(node.getGen());
-        });
+
+            if (!curIn.equals(node.getIn()) || !curOut.equals(node.getOut()))
+                converged = false;
+        }
+        return converged;
     }
 
     private IR.Node getNextIRNode(int i) {
@@ -216,7 +223,7 @@ public class MicroCompiler extends MicroBaseListener {
     @Override
     public void exitFunc_decl(MicroParser.Func_declContext ctx) {
         scope.pop();
-        defer.pop().setFocus(new Variable(Integer.toString(flocalnum - 1), Variable.Type.STRING));
+        defer.pop().setFocus(new Variable(flocalnum - 1, Integer.toString(flocalnum - 1), Variable.Type.STRING));
         inFunction = false;
         flocalnum = 1;
         fparamnum = 0;

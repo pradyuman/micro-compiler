@@ -11,5 +11,6 @@ public class MicroErrorMessages {
     public static final String UnknownTinyType = "Unknown Tiny type";
     public static final String UnknownVariableContext = "Unknown Variable Context";
     public static final String UnableToFindBranchTarget = "Unable to find branch target when building CFG";
+    public static final String InvalidVariableMoveInTranslation = "Invalid Variable being moved in translation";
 
 }

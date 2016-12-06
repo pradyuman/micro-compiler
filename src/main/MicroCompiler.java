@@ -3,8 +3,9 @@ package main;
 import java.util.*;
 import java.util.stream.IntStream;
 
-import main.utils.Expression;
-import main.utils.TinyTranslator;
+import main.expression.Expression;
+import main.expression.Token;
+import main.translator.TinyTranslator;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
 
@@ -364,15 +365,15 @@ public class MicroCompiler extends MicroBaseListener {
 
     // Returns last relevant variable on IR
     public Variable parseExpr(String expr) {
-        List<Expression.Token> infix = Expression.tokenizeExpr(expr, symbolMaps);
-        List<Expression.Token> postfix = Expression.transformToPostfix(infix);
+        List<Token> infix = Expression.tokenizeExpr(expr, symbolMaps);
+        List<Token> postfix = Expression.transformToPostfix(infix);
         Expression.ENode tree = Expression.generateExpressionTree(postfix);
 
-        // Expression is a single constant
+        // expression is a single constant
         if (tree.getToken().isVar())
             return resolveENode(tree);
 
-        // Expression includes an operator
+        // expression includes an operator
         tree.postorder().forEach(n -> {
             if (n.getToken().isFunction()) {
                 ir.add(new IR.Node(IR.Opcode.PUSH));
@@ -429,7 +430,7 @@ public class MicroCompiler extends MicroBaseListener {
         return ir.get(ir.size() - 1).getFocus();
     }
 
-    private Variable tokenToVariable(Expression.Token token) {
+    private Variable tokenToVariable(Token token) {
         if (token.isOperator())
             return new Variable(Variable.Context.TEMP, ((Expression.Operator)token).getRegister(), null, null);
 

@@ -1,6 +1,8 @@
 package main.utils;
 
+import main.expression.Token;
 import main.SymbolMap;
+import main.expression.Expression;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -13,9 +15,9 @@ import static org.junit.Assert.assertEquals;
 
 public class ExpressionTest {
 
-    private List<Expression.Token> infixOnlyConstants;
-    private List<Expression.Token> infixWithVariables;
-    private List<Expression.Token> infixWithFunctions;
+    private List<Token> infixOnlyConstants;
+    private List<Token> infixWithVariables;
+    private List<Token> infixWithFunctions;
     private List<SymbolMap> symbolMaps;
 
     @Before
@@ -29,51 +31,51 @@ public class ExpressionTest {
         // Initialize onlyConstants;
         infixOnlyConstants = new LinkedList<>();
         infixOnlyConstants.addAll(Arrays.asList(
-                new Expression.Token(Expression.Token.Type.VAR, "3"),
+                new Token(Token.Type.VAR, "3"),
                 new Expression.Operator("+"),
-                new Expression.Token(Expression.Token.Type.VAR, "4"),
+                new Token(Token.Type.VAR, "4"),
                 new Expression.Operator("*"),
-                new Expression.Token(Expression.Token.Type.VAR, "2"),
+                new Token(Token.Type.VAR, "2"),
                 new Expression.Operator("/"),
-                new Expression.Token(Expression.Token.Type.LPAREN, "("),
-                new Expression.Token(Expression.Token.Type.VAR, "1"),
+                new Token(Token.Type.LPAREN, "("),
+                new Token(Token.Type.VAR, "1"),
                 new Expression.Operator("-"),
-                new Expression.Token(Expression.Token.Type.VAR, "5"),
-                new Expression.Token(Expression.Token.Type.RPAREN, ")")
+                new Token(Token.Type.VAR, "5"),
+                new Token(Token.Type.RPAREN, ")")
         ));
 
         // Initialize withVariables;
         infixWithVariables = new LinkedList<>();
         infixWithVariables.addAll(Arrays.asList(
-                new Expression.Token(Expression.Token.Type.VAR, "test"),
+                new Token(Token.Type.VAR, "test"),
                 new Expression.Operator("+"),
-                new Expression.Token(Expression.Token.Type.VAR, "a"),
+                new Token(Token.Type.VAR, "a"),
                 new Expression.Operator("*"),
-                new Expression.Token(Expression.Token.Type.VAR, "2"),
+                new Token(Token.Type.VAR, "2"),
                 new Expression.Operator("/"),
-                new Expression.Token(Expression.Token.Type.LPAREN, "("),
-                new Expression.Token(Expression.Token.Type.VAR, "1"),
+                new Token(Token.Type.LPAREN, "("),
+                new Token(Token.Type.VAR, "1"),
                 new Expression.Operator("-"),
-                new Expression.Token(Expression.Token.Type.VAR, "5"),
-                new Expression.Token(Expression.Token.Type.RPAREN, ")")
+                new Token(Token.Type.VAR, "5"),
+                new Token(Token.Type.RPAREN, ")")
         ));
 
         // Initialize withFunctions
         infixWithFunctions = new LinkedList<>();
         infixWithFunctions.addAll(Arrays.asList(
-                new Expression.Token(Expression.Token.Type.FUNCTION, "sin"),
-                new Expression.Token(Expression.Token.Type.LPAREN, "("),
-                new Expression.Token(Expression.Token.Type.FUNCTION, "max"),
-                new Expression.Token(Expression.Token.Type.LPAREN, "("),
-                new Expression.Token(Expression.Token.Type.VAR, "2"),
-                new Expression.Token(Expression.Token.Type.FSEPARATOR, ","),
-                new Expression.Token(Expression.Token.Type.VAR, "3"),
-                new Expression.Token(Expression.Token.Type.RPAREN, ")"),
+                new Token(Token.Type.FUNCTION, "sin"),
+                new Token(Token.Type.LPAREN, "("),
+                new Token(Token.Type.FUNCTION, "max"),
+                new Token(Token.Type.LPAREN, "("),
+                new Token(Token.Type.VAR, "2"),
+                new Token(Token.Type.FSEPARATOR, ","),
+                new Token(Token.Type.VAR, "3"),
+                new Token(Token.Type.RPAREN, ")"),
                 new Expression.Operator("/"),
-                new Expression.Token(Expression.Token.Type.VAR, "3"),
+                new Token(Token.Type.VAR, "3"),
                 new Expression.Operator("*"),
-                new Expression.Token(Expression.Token.Type.VAR, "3.1415"),
-                new Expression.Token(Expression.Token.Type.RPAREN, ")")
+                new Token(Token.Type.VAR, "3.1415"),
+                new Token(Token.Type.RPAREN, ")")
 
         ));
 
@@ -81,72 +83,72 @@ public class ExpressionTest {
 
     @Test
     public void tokenizeExprOnlyConstants() throws Exception {
-        List<Expression.Token> actual = Expression.tokenizeExpr("3+4*2/(1-5)", symbolMaps);
+        List<Token> actual = Expression.tokenizeExpr("3+4*2/(1-5)", symbolMaps);
         assertEquals(infixOnlyConstants, actual);
     }
 
     @Test
     public void tokenizeExprWithVariables() throws Exception {
-        List<Expression.Token> actual = Expression.tokenizeExpr("test+a*2/(1-5)", symbolMaps);
+        List<Token> actual = Expression.tokenizeExpr("test+a*2/(1-5)", symbolMaps);
         assertEquals(infixWithVariables, actual);
     }
 
     @Test
     public void tokenizeExprWithFunctions() throws Exception {
-        List<Expression.Token> actual = Expression.tokenizeExpr("sin(max(2,3)/3*3.1415)", symbolMaps);
+        List<Token> actual = Expression.tokenizeExpr("sin(max(2,3)/3*3.1415)", symbolMaps);
         assertEquals(infixWithFunctions, actual);
     }
 
     @Test
     public void transformToPostfixOnlyConstants() throws Exception {
-        List<Expression.Token> expected = new LinkedList<>();
+        List<Token> expected = new LinkedList<>();
         expected.addAll(Arrays.asList(
-                new Expression.Token(Expression.Token.Type.VAR, "3"),
-                new Expression.Token(Expression.Token.Type.VAR, "4"),
-                new Expression.Token(Expression.Token.Type.VAR, "2"),
+                new Token(Token.Type.VAR, "3"),
+                new Token(Token.Type.VAR, "4"),
+                new Token(Token.Type.VAR, "2"),
                 new Expression.Operator("*"),
-                new Expression.Token(Expression.Token.Type.VAR, "1"),
-                new Expression.Token(Expression.Token.Type.VAR, "5"),
+                new Token(Token.Type.VAR, "1"),
+                new Token(Token.Type.VAR, "5"),
                 new Expression.Operator("-"),
                 new Expression.Operator("/"),
                 new Expression.Operator("+")
         ));
-        List<Expression.Token> actual = Expression.transformToPostfix(infixOnlyConstants);
+        List<Token> actual = Expression.transformToPostfix(infixOnlyConstants);
         assertEquals(expected, actual);
     }
 
     @Test
     public void transformToPostfixWithVariables() throws Exception {
-        List<Expression.Token> expected = new LinkedList<>();
+        List<Token> expected = new LinkedList<>();
         expected.addAll(Arrays.asList(
-                new Expression.Token(Expression.Token.Type.VAR, "test"),
-                new Expression.Token(Expression.Token.Type.VAR, "a"),
-                new Expression.Token(Expression.Token.Type.VAR, "2"),
+                new Token(Token.Type.VAR, "test"),
+                new Token(Token.Type.VAR, "a"),
+                new Token(Token.Type.VAR, "2"),
                 new Expression.Operator("*"),
-                new Expression.Token(Expression.Token.Type.VAR, "1"),
-                new Expression.Token(Expression.Token.Type.VAR, "5"),
+                new Token(Token.Type.VAR, "1"),
+                new Token(Token.Type.VAR, "5"),
                 new Expression.Operator("-"),
                 new Expression.Operator("/"),
                 new Expression.Operator("+")
         ));
-        List<Expression.Token> actual = Expression.transformToPostfix(infixWithVariables);
+        List<Token> actual = Expression.transformToPostfix(infixWithVariables);
         assertEquals(expected, actual);
     }
 
     @Test
     public void transformToPostfixWithFunctions() throws Exception {
-        List<Expression.Token> expected = new LinkedList<>();
+        List<Token> expected = new LinkedList<>();
         expected.addAll(Arrays.asList(
-                new Expression.Token(Expression.Token.Type.VAR, "2"),
-                new Expression.Token(Expression.Token.Type.VAR, "3"),
-                new Expression.Token(Expression.Token.Type.FUNCTION, "max"),
-                new Expression.Token(Expression.Token.Type.VAR, "3"),
+                new Token(Token.Type.VAR, "2"),
+                new Token(Token.Type.VAR, "3"),
+                new Token(Token.Type.FUNCTION, "max"),
+                new Token(Token.Type.VAR, "3"),
                 new Expression.Operator("/"),
-                new Expression.Token(Expression.Token.Type.VAR, "3.1415"),
+                new Token(Token.Type.VAR, "3.1415"),
                 new Expression.Operator("*"),
-                new Expression.Token(Expression.Token.Type.FUNCTION, "sin")
+                new Token(Token.Type.FUNCTION, "sin")
         ));
-        List<Expression.Token> actual = Expression.transformToPostfix(infixWithFunctions);
+        List<Token> actual = Expression.transformToPostfix(infixWithFunctions);
         assertEquals(expected, actual);
     }
 

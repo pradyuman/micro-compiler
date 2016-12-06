@@ -12,7 +12,7 @@ compiler:
 	java -cp $(LIB_ANTLR) org.antlr.v4.Tool -o build/main -package main $(ANTLR_SCRIPT)
 	rm -rf classes
 	mkdir -p classes
-	javac -cp $(LIB) -d classes src/main/*.java src/main/utils/*.java build/main/*.java
+	javac -cp $(LIB) -d classes src/main/*.java src/main/expression/*.java src/main/translator/*.java build/main/*.java
 lexer:
 	@java -cp "$(LIB):$(CLASS_PATH)" \
 	org.antlr.v4.gui.TestRig main.Micro tokens -tokens

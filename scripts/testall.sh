@@ -16,7 +16,7 @@ do
         echo "$file check:"
     fi
     make run-tiny FILE=testcases/input/$FILE < testcases/input/$FILE.input
-    make check-tiny IFILE=testcases/input/$FILE CFILE=testcases/output/$FILE
+    make check-tiny IFILE=testcases/input/$FILE.tout CFILE=testcases/output/$FILE.tinyout
 done
 
 rm testcases_step5.tar.gz

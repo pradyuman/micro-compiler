@@ -86,8 +86,10 @@ public class TinyTranslator {
     public void printTinyFromIR(SymbolMap globalSymbolMap, IR ir) {
         System.out.println(";tiny code");
 
+        /*
         IR tinyIR = transformIRtoTinyIR(ir, globalSymbolMap);
         System.out.println(tinyIR);
+        */
 
         globalSymbolMap.values().stream()
                 .map(e -> e.isString() ?
@@ -101,16 +103,18 @@ public class TinyTranslator {
         System.out.println("jsr main");
         System.out.println("sys halt");
 
-        tinyIR.forEach(n -> {
+        ir.forEach(n -> {
             String op1 = resolveOp(n.getOp1());
             String op2 = resolveOp(n.getOp2());
             String focus = resolveOp(n.getFocus());
             String command = dict.get(n.getOpcode());
 
             switch(getType(n.getOpcode())) {
+                /*
                 case LINK:
                     System.out.println("link 300");
                     break;
+                    */
                 case GENERIC:
                     if (focus == null)
                         System.out.format("%s\n", command);
@@ -123,11 +127,10 @@ public class TinyTranslator {
                     break;
                 case COMP:
                     String comp = resolveComp(n.getOp1(), n.getOp2());
-                    /*
                     if (!n.getOp2().isTemp()) {
                         System.out.format("move %s r%s\n", op2, ++register);
                         op2 = "r" + register;
-                    }*/
+                    }
                     System.out.format("%s %s %s\n", comp, op1, op2);
                     System.out.format("%s %s\n", command, focus);
                     break;
@@ -192,7 +195,7 @@ public class TinyTranslator {
     }
 
     private Type getType(IR.Opcode opcode) {
-        if (opcode == IR.Opcode.LINK) return Type.LINK;
+        //if (opcode == IR.Opcode.LINK) return Type.LINK;
         if (CalcSet.contains(opcode)) return Type.CALC;
         if (CompSet.contains(opcode)) return Type.COMP;
         if (StoreSet.contains(opcode)) return Type.STORE;

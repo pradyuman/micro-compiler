@@ -1,9 +1,9 @@
-package main.translator;
+package compiler.translator;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import main.IR;
-import main.Variable;
+import compiler.IR;
+import compiler.Variable;
 
 import java.util.ArrayList;
 import java.util.List;

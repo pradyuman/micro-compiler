@@ -1,12 +1,12 @@
-package main;
+package compiler;
 
 import java.util.*;
 import java.util.stream.IntStream;
 
-import main.expression.Expression;
-import main.expression.Operator;
-import main.expression.Token;
-import main.translator.TinyTranslator;
+import compiler.expression.Expression;
+import compiler.expression.Operator;
+import compiler.expression.Token;
+import compiler.translator.TinyTranslator;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
 

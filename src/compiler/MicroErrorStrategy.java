@@ -1,4 +1,4 @@
-package main;
+package compiler;
 
 import org.antlr.v4.runtime.*;
 

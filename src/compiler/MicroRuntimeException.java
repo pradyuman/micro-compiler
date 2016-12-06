@@ -1,4 +1,4 @@
-package main;
+package compiler;
 
 public class MicroRuntimeException extends RuntimeException {
 

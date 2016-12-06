@@ -1,4 +1,4 @@
-package main.expression;
+package compiler.expression;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;

@@ -8,17 +8,17 @@ group:
 	@echo "Pradyuman Vig (pvig)  Tiger Cheng (tigerc)"
 compiler:
 	rm -rf build
-	mkdir -p build/main
-	java -cp $(LIB_ANTLR) org.antlr.v4.Tool -o build/main -package main $(ANTLR_SCRIPT)
+	mkdir -p build/compiler
+	java -cp $(LIB_ANTLR) org.antlr.v4.Tool -o build/compiler -package compiler $(ANTLR_SCRIPT)
 	rm -rf classes
 	mkdir -p classes
-	javac -cp $(LIB) -d classes src/main/*.java src/main/expression/*.java src/main/translator/*.java build/main/*.java
+	javac -cp $(LIB) -d classes src/compiler/*.java src/compiler/expression/*.java src/compiler/translator/*.java build/compiler/*.java
 lexer:
 	@java -cp "$(LIB):$(CLASS_PATH)" \
-	org.antlr.v4.gui.TestRig main.Micro tokens -tokens
+	org.antlr.v4.gui.TestRig compiler.Micro tokens -tokens
 run:
 	@java -cp "$(LIB):$(CLASS_PATH)" \
-	main.Micro $(FILE).micro > $(FILE).test
+	compiler.Micro $(FILE).micro > $(FILE).test
 check:
 	diff -b -B $(FILE).out $(FILE).test
 download:

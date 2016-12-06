@@ -1,4 +1,4 @@
-package main.translator;
+package compiler.translator;
 
 import java.util.Collections;
 import java.util.EnumSet;
@@ -6,11 +6,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.IntStream;
 
-import main.IR;
-import main.MicroErrorMessages;
-import main.MicroRuntimeException;
-import main.SymbolMap;
-import main.Variable;
+import compiler.IR;
+import compiler.MicroErrorMessages;
+import compiler.MicroRuntimeException;
+import compiler.SymbolMap;
+import compiler.Variable;
 
 public class TinyTranslator {
 
@@ -100,7 +100,7 @@ public class TinyTranslator {
         // Init Main
         System.out.println("push");
         pushReg();
-        System.out.println("jsr main");
+        System.out.println("jsr compiler");
         System.out.println("sys halt");
 
         ir.forEach(n -> {

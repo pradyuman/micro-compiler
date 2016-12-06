@@ -1,4 +1,4 @@
-package main.expression;
+package compiler.expression;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -9,9 +9,9 @@ import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.IntStream;
-import main.MicroErrorMessages;
-import main.MicroRuntimeException;
-import main.SymbolMap;
+import compiler.MicroErrorMessages;
+import compiler.MicroRuntimeException;
+import compiler.SymbolMap;
 
 public final class Expression {
 
@@ -79,20 +79,20 @@ public final class Expression {
     public static List<Token> tokenizeExpr(String expr, List<SymbolMap> symbolMaps) {
         List<Token> list = new LinkedList<>();
 
-        for (String s : expr.split("(?<=op)|(?=op)".replace("op", main.expression.Token.calcop))) {
-            Token.Type t = main.expression.Token.Type.VAR;
+        for (String s : expr.split("(?<=op)|(?=op)".replace("op", compiler.expression.Token.calcop))) {
+            Token.Type t = compiler.expression.Token.Type.VAR;
             SymbolMap func = symbolMaps.stream().filter(m -> m.getName().equals(s)).findFirst().orElse(null);
 
             if (s.equals("(")) {
-                t = main.expression.Token.Type.LPAREN;
+                t = compiler.expression.Token.Type.LPAREN;
             } else if (s.equals(")")) {
-                t = main.expression.Token.Type.RPAREN;
+                t = compiler.expression.Token.Type.RPAREN;
             } else if (s.equals(",")) {
-                t = main.expression.Token.Type.FSEPARATOR;
-            } else if (s.matches(main.expression.Token.calcop)) {
-                t = main.expression.Token.Type.OPERATOR;
+                t = compiler.expression.Token.Type.FSEPARATOR;
+            } else if (s.matches(compiler.expression.Token.calcop)) {
+                t = compiler.expression.Token.Type.OPERATOR;
             } else if (func != null) {
-                t = main.expression.Token.Type.FUNCTION;
+                t = compiler.expression.Token.Type.FUNCTION;
             }
 
             switch (t) {

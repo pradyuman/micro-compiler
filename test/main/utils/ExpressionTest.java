@@ -1,5 +1,6 @@
 package main.utils;
 
+import main.expression.Operator;
 import main.expression.Token;
 import main.SymbolMap;
 import main.expression.Expression;
@@ -32,14 +33,14 @@ public class ExpressionTest {
         infixOnlyConstants = new LinkedList<>();
         infixOnlyConstants.addAll(Arrays.asList(
                 new Token(Token.Type.VAR, "3"),
-                new Expression.Operator("+"),
+                new Operator("+"),
                 new Token(Token.Type.VAR, "4"),
-                new Expression.Operator("*"),
+                new Operator("*"),
                 new Token(Token.Type.VAR, "2"),
-                new Expression.Operator("/"),
+                new Operator("/"),
                 new Token(Token.Type.LPAREN, "("),
                 new Token(Token.Type.VAR, "1"),
-                new Expression.Operator("-"),
+                new Operator("-"),
                 new Token(Token.Type.VAR, "5"),
                 new Token(Token.Type.RPAREN, ")")
         ));
@@ -48,14 +49,14 @@ public class ExpressionTest {
         infixWithVariables = new LinkedList<>();
         infixWithVariables.addAll(Arrays.asList(
                 new Token(Token.Type.VAR, "test"),
-                new Expression.Operator("+"),
+                new Operator("+"),
                 new Token(Token.Type.VAR, "a"),
-                new Expression.Operator("*"),
+                new Operator("*"),
                 new Token(Token.Type.VAR, "2"),
-                new Expression.Operator("/"),
+                new Operator("/"),
                 new Token(Token.Type.LPAREN, "("),
                 new Token(Token.Type.VAR, "1"),
-                new Expression.Operator("-"),
+                new Operator("-"),
                 new Token(Token.Type.VAR, "5"),
                 new Token(Token.Type.RPAREN, ")")
         ));
@@ -71,9 +72,9 @@ public class ExpressionTest {
                 new Token(Token.Type.FSEPARATOR, ","),
                 new Token(Token.Type.VAR, "3"),
                 new Token(Token.Type.RPAREN, ")"),
-                new Expression.Operator("/"),
+                new Operator("/"),
                 new Token(Token.Type.VAR, "3"),
-                new Expression.Operator("*"),
+                new Operator("*"),
                 new Token(Token.Type.VAR, "3.1415"),
                 new Token(Token.Type.RPAREN, ")")
 
@@ -106,12 +107,12 @@ public class ExpressionTest {
                 new Token(Token.Type.VAR, "3"),
                 new Token(Token.Type.VAR, "4"),
                 new Token(Token.Type.VAR, "2"),
-                new Expression.Operator("*"),
+                new Operator("*"),
                 new Token(Token.Type.VAR, "1"),
                 new Token(Token.Type.VAR, "5"),
-                new Expression.Operator("-"),
-                new Expression.Operator("/"),
-                new Expression.Operator("+")
+                new Operator("-"),
+                new Operator("/"),
+                new Operator("+")
         ));
         List<Token> actual = Expression.transformToPostfix(infixOnlyConstants);
         assertEquals(expected, actual);
@@ -124,12 +125,12 @@ public class ExpressionTest {
                 new Token(Token.Type.VAR, "test"),
                 new Token(Token.Type.VAR, "a"),
                 new Token(Token.Type.VAR, "2"),
-                new Expression.Operator("*"),
+                new Operator("*"),
                 new Token(Token.Type.VAR, "1"),
                 new Token(Token.Type.VAR, "5"),
-                new Expression.Operator("-"),
-                new Expression.Operator("/"),
-                new Expression.Operator("+")
+                new Operator("-"),
+                new Operator("/"),
+                new Operator("+")
         ));
         List<Token> actual = Expression.transformToPostfix(infixWithVariables);
         assertEquals(expected, actual);
@@ -143,9 +144,9 @@ public class ExpressionTest {
                 new Token(Token.Type.VAR, "3"),
                 new Token(Token.Type.FUNCTION, "max"),
                 new Token(Token.Type.VAR, "3"),
-                new Expression.Operator("/"),
+                new Operator("/"),
                 new Token(Token.Type.VAR, "3.1415"),
-                new Expression.Operator("*"),
+                new Operator("*"),
                 new Token(Token.Type.FUNCTION, "sin")
         ));
         List<Token> actual = Expression.transformToPostfix(infixWithFunctions);

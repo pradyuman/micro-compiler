@@ -4,6 +4,7 @@ import java.util.*;
 import java.util.stream.IntStream;
 
 import main.expression.Expression;
+import main.expression.Operator;
 import main.expression.Token;
 import main.translator.TinyTranslator;
 import org.antlr.v4.runtime.ParserRuleContext;
@@ -367,13 +368,13 @@ public class MicroCompiler extends MicroBaseListener {
     public Variable parseExpr(String expr) {
         List<Token> infix = Expression.tokenizeExpr(expr, symbolMaps);
         List<Token> postfix = Expression.transformToPostfix(infix);
-        Expression.ENode tree = Expression.generateExpressionTree(postfix);
+        Expression.Node tree = Expression.generateExpressionTree(postfix);
 
-        // expression is a single constant
+        // Expression is a single constant
         if (tree.getToken().isVar())
             return resolveENode(tree);
 
-        // expression includes an operator
+        // Expression includes an operator
         tree.postorder().forEach(n -> {
             if (n.getToken().isFunction()) {
                 ir.add(new IR.Node(IR.Opcode.PUSH));
@@ -386,7 +387,7 @@ public class MicroCompiler extends MicroBaseListener {
             }
 
             if (n.getToken().isOperator()) {
-                Expression.Operator operator = (Expression.Operator)n.getToken();
+                Operator operator = (Operator)n.getToken();
                 operator.setRegister(register++);
 
                 Variable op1 = resolveENode(n.get(0));
@@ -400,7 +401,7 @@ public class MicroCompiler extends MicroBaseListener {
         return ir.get(ir.size() - 1).getFocus();
     }
 
-    private Variable resolveENode(Expression.ENode node) {
+    private Variable resolveENode(Expression.Node node) {
         if (node.getToken().isFunction())
             return resolveFunction(node);
 
@@ -418,7 +419,7 @@ public class MicroCompiler extends MicroBaseListener {
         return var;
     }
 
-    private Variable resolveFunction(Expression.ENode node) {
+    private Variable resolveFunction(Expression.Node node) {
         ir.add(new IR.Node(IR.Opcode.PUSH));
         node.forEach(p -> ir.add(new IR.Node(IR.Opcode.PUSH, resolveENode(p))));
         ir.add(new IR.Node(IR.Opcode.JSR,
@@ -432,7 +433,7 @@ public class MicroCompiler extends MicroBaseListener {
 
     private Variable tokenToVariable(Token token) {
         if (token.isOperator())
-            return new Variable(Variable.Context.TEMP, ((Expression.Operator)token).getRegister(), null, null);
+            return new Variable(Variable.Context.TEMP, ((Operator)token).getRegister(), null, null);
 
         return resolveId(token.getValue());
     }

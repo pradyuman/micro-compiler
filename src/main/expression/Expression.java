@@ -3,7 +3,6 @@ package main.expression;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.ToString;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -18,25 +17,6 @@ public final class Expression {
 
     private Expression() {}
 
-    @Data
-    @EqualsAndHashCode(callSuper = true)
-    @ToString(callSuper = true)
-    public static final class Operator extends Token {
-
-        private int precedence;
-        private int register;
-
-        public Operator(String value) {
-            super(Type.OPERATOR, value);
-            if (value.matches("[<]")) this.precedence = 0;
-            else this.precedence = value.matches("[+-]") ? 1 : 2;
-        }
-
-        public boolean isHigherPrecedence(Operator t) {
-            return precedence > t.getPrecedence();
-        }
-    }
-
     /**
      * expression Node:
      *  - [-+/*] are binary
@@ -44,11 +24,11 @@ public final class Expression {
      */
     @Data
     @EqualsAndHashCode(callSuper = true)
-    public static final class ENode extends LinkedList<ENode> {
+    public static final class Node extends LinkedList<Node> {
 
         private Token token;
 
-        public ENode(Token token) {
+        public Node(Token token) {
             super();
             this.token = token;
         }
@@ -60,18 +40,18 @@ public final class Expression {
             return b.toString();
         }
 
-        public List<ENode> postorder() {
-            List<ENode>postorder = new LinkedList<>();
+        public List<Node> postorder() {
+            List<Node>postorder = new LinkedList<>();
 
             @Data
             @AllArgsConstructor
-            class ENodeState {
-                private ENode node;
+            class NodeState {
+                private Node node;
                 private boolean visited;
             }
 
-            ENodeState state = new ENodeState(ENode.this, false);
-            Deque<ENodeState> stack = new LinkedList<>();
+            NodeState state = new NodeState(Node.this, false);
+            Deque<NodeState> stack = new LinkedList<>();
             stack.push(state);
 
             while (true) {
@@ -84,10 +64,10 @@ public final class Expression {
 
                 state = stack.peek();
                 state.setVisited(true);
-                ENode cur = state.getNode();
+                Node cur = state.getNode();
 
                 for (int i = cur.size() - 1; i >= 0; i--) {
-                    stack.push(new ENodeState(cur.get(i), cur.get(i).size() == 0));
+                    stack.push(new NodeState(cur.get(i), cur.get(i).size() == 0));
                 }
             }
 
@@ -188,21 +168,21 @@ public final class Expression {
         return postfix;
     }
 
-    public static ENode generateExpressionTree(List<Token> postfix) {
-        Deque<ENode> stack = new ArrayDeque<>();
+    public static Node generateExpressionTree(List<Token> postfix) {
+        Deque<Node> stack = new ArrayDeque<>();
         postfix.forEach(t -> {
            if (t.isOperator()) {
-               ENode n = new ENode(t);
+               Node n = new Node(t);
                n.addFirst(stack.pop());
                n.addFirst(stack.pop());
                stack.push(n);
            } else if (t.isFunction()) {
-               ENode n = new ENode(t);
+               Node n = new Node(t);
                IntStream.range(0, t.getNumParam())
                        .forEach(__ -> n.addFirst(stack.pop()));
                stack.push(n);
             } else {
-               stack.push(new ENode(t));
+               stack.push(new Node(t));
            }
         });
         return stack.pop();

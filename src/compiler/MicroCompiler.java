@@ -217,8 +217,11 @@ public class MicroCompiler extends MicroBaseListener {
 
     @Override
     public void exitFunc_decl(MicroParser.Func_declContext ctx) {
+        // Set LINK number (#local + #temp)
+        defer.pop().setFocus(
+                new Element(flocalnum - 1, Integer.toString(flocalnum - 1 + register), Element.Type.STRING));
+
         scope.pop();
-        defer.pop().setFocus(new Element(flocalnum - 1, Integer.toString(flocalnum - 1), Element.Type.STRING));
         inFunction = false;
         flocalnum = 1;
         fparamnum = 0;

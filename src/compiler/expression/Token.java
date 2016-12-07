@@ -1,7 +1,7 @@
 package compiler.expression;
 
-import compiler.IR;
 import compiler.SymbolMap;
+import compiler.element.Constant;
 import compiler.element.Element;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -47,7 +47,7 @@ public class Token {
         if (el != null)
             return el;
 
-        return Element.parseConstant(value);
+        return Constant.parse(value);
     }
 
 }

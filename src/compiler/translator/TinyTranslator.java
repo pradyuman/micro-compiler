@@ -50,7 +50,7 @@ public class TinyTranslator {
     }
 
     private enum Type {
-        GENERIC, CALC, COMP, JSR, RET, STORE, LINK
+        GENERIC, CALC, COMP, JSR, RET, STORE
     }
 
     private static EnumSet<IR.Opcode> CalcSet = EnumSet.of(
@@ -110,11 +110,6 @@ public class TinyTranslator {
             String command = dict.get(n.getOpcode());
 
             switch(getType(n.getOpcode())) {
-                /*
-                case LINK:
-                    System.out.println("link 300");
-                    break;
-                    */
                 case GENERIC:
                     if (focus == null)
                         System.out.format("%s\n", command);
@@ -194,7 +189,6 @@ public class TinyTranslator {
     }
 
     private Type getType(IR.Opcode opcode) {
-        //if (opcode == IR.Opcode.LINK) return Type.LINK;
         if (CalcSet.contains(opcode)) return Type.CALC;
         if (CompSet.contains(opcode)) return Type.COMP;
         if (StoreSet.contains(opcode)) return Type.STORE;

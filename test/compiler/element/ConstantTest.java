@@ -1,15 +1,14 @@
-package compiler;
+package compiler.element;
 
-import compiler.element.Element;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
 
-public class VariableTest {
+public class ConstantTest {
 
     @Test
     public void generateConstantInt() throws Exception {
-        Element actual = Element.parseConstant("20");
+        Element actual = Constant.parse("20");
         assertTrue(actual.isConstant());
         assertTrue(actual.isInt());
         assertEquals("20", actual.getValue());
@@ -17,7 +16,7 @@ public class VariableTest {
 
     @Test
     public void generateConstantNegativeInt() throws Exception {
-        Element actual = Element.parseConstant("-20");
+        Element actual = Constant.parse("-20");
         assertTrue(actual.isConstant());
         assertTrue(actual.isInt());
         assertEquals("-20", actual.getValue());
@@ -25,7 +24,7 @@ public class VariableTest {
 
     @Test
     public void generateConstantFloat() throws Exception {
-        Element actual = Element.parseConstant("22.44");
+        Element actual = Constant.parse("22.44");
         assertTrue(actual.isConstant());
         assertTrue(actual.isFloat());
         assertEquals("22.44", actual.getValue());
@@ -33,7 +32,7 @@ public class VariableTest {
 
     @Test
     public void generateConstantNegativeFloat() throws Exception {
-        Element actual = Element.parseConstant("-22.44");
+        Element actual = Constant.parse("-22.44");
         assertTrue(actual.isConstant());
         assertTrue(actual.isFloat());
         assertEquals("-22.44", actual.getValue());

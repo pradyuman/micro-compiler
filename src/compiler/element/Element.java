@@ -11,7 +11,7 @@ import java.util.List;
 
 @Data
 @AllArgsConstructor
-public final class Element {
+public class Element {
 
     private static String FLOCAL_PREFIX = "$L";
     private static String FPARAM_PREFIX = "$P";
@@ -32,10 +32,7 @@ public final class Element {
     private Type type;
     private String value;
 
-    // Constant
-    public Element(Type type, String value) {
-        this(Context.CONSTANT, 0, null, type, value);
-    }
+    public Element() {}
 
     // Element with value
     public Element(String name, Type type, String value) {
@@ -89,16 +86,6 @@ public final class Element {
 
     public boolean isTemp() {
         return ctx == Context.TEMP;
-    }
-
-    public static Element parseConstant(String id) {
-        if (id.matches("[+-]?[0-9]+$"))
-            return new Element(Element.Type.INT, id);
-
-        if (id.matches("[+-]?([0-9]*[.])?[0-9]+"))
-            return new Element(Element.Type.FLOAT, id);
-
-        return null;
     }
 
     public String getRef() {

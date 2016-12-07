@@ -11,6 +11,7 @@ import compiler.MicroErrorMessages;
 import compiler.MicroRuntimeException;
 import compiler.SymbolMap;
 import compiler.element.Element;
+import compiler.element.Temporary;
 
 public class TinyTranslator {
 
@@ -122,7 +123,7 @@ public class TinyTranslator {
                     break;
                 case COMP:
                     String comp = resolveComp(n.getOp1(), n.getOp2());
-                    if (!n.getOp2().isTemp()) {
+                    if (!n.getOp2().isTemporary()) {
                         System.out.format("move %s r%s\n", op2, ++register);
                         op2 = "r" + register;
                     }
@@ -139,7 +140,7 @@ public class TinyTranslator {
                     System.out.println("ret");
                     break;
                 case STORE:
-                    if (!n.getOp1().isTemp() && !n.getFocus().isTemp()) {
+                    if (!n.getOp1().isTemporary() && !n.getFocus().isTemporary()) {
                         System.out.format("move %s r%s\n", op1, ++register);
                         op1 = "r" + register;
                     }
@@ -168,18 +169,18 @@ public class TinyTranslator {
                 if (n.getOp1() != null && !n.getOp1().isConstant()) {
                     rx = rf.ensure(n.getOp1(), n, tinyIR, localnum);
                     rf.free(n.getOp1(), rx, tinyIR, n.getOut(), localnum, false);
-                    tOp1 = new Element(Element.Context.TEMP, rx.getId(), null, null);
+                    tOp1 = new Temporary(rx.getId());
                 }
 
                 if (n.getOp2() != null && !n.getOp2().isConstant()) {
                     ry = rf.ensure(n.getOp2(), n, tinyIR, localnum);
                     rf.free(n.getOp1(), ry, tinyIR, n.getOut(), localnum, false);
-                    tOp2 = new Element(Element.Context.TEMP, ry.getId(), null, null);
+                    tOp2 = new Temporary(ry.getId());
                 }
 
                 if (n.getFocus() != null && !CompSet.contains(n.getOpcode())) {
                     rz = rf.ensure(n.getFocus(), n, tinyIR, localnum);
-                    tFocus = new Element(Element.Context.TEMP, rz.getId(), null, null);
+                    tFocus = new Temporary(rz.getId());
                 }
             }
 
@@ -213,7 +214,7 @@ public class TinyTranslator {
         switch (op.getCtx()) {
             case CONSTANT:
                 return op.getValue();
-            case TEMP:
+            case TEMPORARY:
                 if (!map.containsKey(op.getRef()))
                     map.put(op.getRef(), ++register);
                 return "r" + map.get(op.getRef());

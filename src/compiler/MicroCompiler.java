@@ -4,6 +4,7 @@ import java.util.*;
 import java.util.stream.IntStream;
 
 import compiler.element.Element;
+import compiler.element.Temporary;
 import compiler.expression.Expression;
 import compiler.expression.Operator;
 import compiler.expression.Token;
@@ -382,7 +383,7 @@ public class MicroCompiler extends MicroBaseListener {
                 Element op1 = resolveENode(n.get(0));
                 Element op2 = resolveENode(n.get(1));
                 Element.Type exprType = op1.isFloat() || op2.isFloat() ? Element.Type.FLOAT : Element.Type.INT;
-                Element result = new Element(Element.Context.TEMP, operator.getRegister(), null, exprType);
+                Element result = new Temporary(operator.getRegister(), exprType);
                 ir.add(new IR.Node(IR.parseCalcOp(operator.getValue(), exprType), op1, op2, result));
             }
         });
@@ -400,7 +401,7 @@ public class MicroCompiler extends MicroBaseListener {
 
         if (el.isConstant()) {
             IR.Opcode opcode = el.isInt() ? IR.Opcode.STOREI : IR.Opcode.STOREF;
-            Element temp = new Element(Element.Context.TEMP, register++, null, el.getType());
+            Element temp = new Temporary(register++, el.getType());
             ir.add(new IR.Node(opcode, el, temp));
             return temp;
         }
@@ -415,7 +416,7 @@ public class MicroCompiler extends MicroBaseListener {
                 new Element(node.getToken().getValue(), Element.Type.STRING)));
         node.forEach(p -> ir.add(new IR.Node(IR.Opcode.POP)));
         ir.add(new IR.Node(IR.Opcode.POP,
-                new Element(Element.Context.TEMP, register++, null, null)));
+                new Temporary(register++)));
 
         return ir.get(ir.size() - 1).getFocus();
     }

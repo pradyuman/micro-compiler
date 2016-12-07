@@ -1,5 +1,6 @@
 package compiler.translator;
 
+import compiler.element.Temporary;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import compiler.IR;
@@ -86,7 +87,7 @@ public class RegisterFile {
         // local, param, temp
         int relativeStackAddress;
         switch(var.getCtx()) {
-            case TEMP:
+            case TEMPORARY:
                 relativeStackAddress = -(localCount + var.getCtxVal()); break;
             case FLOCAL:
                 relativeStackAddress = -var.getCtxVal(); break;
@@ -99,7 +100,7 @@ public class RegisterFile {
                 return;
         }
 
-        Element temp = new Element(Element.Context.TEMP, relativeStackAddress, null, var.getType());
+        Element temp = new Temporary(relativeStackAddress, var.getType());
         if (load)
             tinyIR.add(new IR.Node(opcode, temp, var));
         else

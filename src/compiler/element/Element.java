@@ -15,7 +15,6 @@ public class Element {
 
     private static String FLOCAL_PREFIX = "$L";
     private static String FPARAM_PREFIX = "$P";
-    private static String TEMP_PREFIX = "$T";
     private static String RETURN = "$R";
 
     public enum Type {
@@ -23,7 +22,7 @@ public class Element {
     }
 
     public enum Context {
-        NORMAL, CONSTANT, TEMP, FLOCAL, FPARAM, RETURN
+        NORMAL, CONSTANT, TEMPORARY, FLOCAL, FPARAM, RETURN
     }
 
     private Context ctx;
@@ -84,8 +83,8 @@ public class Element {
         return type == Type.STRING;
     }
 
-    public boolean isTemp() {
-        return ctx == Context.TEMP;
+    public boolean isTemporary() {
+        return ctx == Context.TEMPORARY;
     }
 
     public String getRef() {
@@ -94,8 +93,6 @@ public class Element {
                 return name;
             case CONSTANT:
                 return value;
-            case TEMP:
-                return TEMP_PREFIX + ctxVal;
             case FLOCAL:
                 return FLOCAL_PREFIX + ctxVal;
             case FPARAM:

@@ -1,8 +1,8 @@
 package compiler.expression;
 
-import compiler.IR;
 import compiler.SymbolMap;
 import compiler.element.Element;
+import compiler.element.Temporary;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -32,7 +32,7 @@ public final class Operator extends Token {
 
     @Override
     public Element toElement(List<SymbolMap> symbolMaps, LinkedList<Integer> scope) {
-        return new Element(Element.Context.TEMP, register, null, null);
+        return new Temporary(register);
     }
 
 }

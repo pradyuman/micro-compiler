@@ -362,7 +362,6 @@ public class MicroCompiler extends MicroBaseListener {
         List<Token> infix = Expression.tokenizeExpr(expr, symbolMaps);
         List<Token> postfix = Expression.transformToPostfix(infix);
         Expression.Node tree = Expression.generateExpressionTree(postfix);
-        System.out.println(tree.toIR(symbolMaps, scope, register));
 
         // Expression is a single constant
         if (tree.getToken().isVar())
@@ -370,9 +369,8 @@ public class MicroCompiler extends MicroBaseListener {
 
         // Expression includes an operator
         tree.postorder().forEach(n -> {
-            if (n.getToken().isFunction()) {
+            if (n.getToken().isFunction())
                 resolveFunction(n);
-            }
 
             if (n.getToken().isOperator()) {
                 Operator operator = (Operator)n.getToken();

@@ -43,25 +43,6 @@ public final class Expression {
             return b.toString();
         }
 
-        /*
-        public Element toElement(List<SymbolMap> symbolMaps, LinkedList<Integer> scope, IR ir, Integer register) {
-            if (token.isFunction()) {
-                IR funcIR = token.toIR(symbolMaps, scope, this, register);
-                ir.addAll(funcIR);
-                return funcIR.get(funcIR.size() - 1).getFocus();
-            }
-
-            Element el
-        }
-        */
-
-        public IR toIR(List<SymbolMap> symbolMaps, LinkedList<Integer> scope, Integer register) {
-            return postorder().stream()
-                    .flatMap(n -> n.getToken().toIR(symbolMaps, scope, n, register).stream())
-                    .collect(Collectors.toCollection(() -> new IR(symbolMaps.get(0))));
-        }
-
-
         public List<Node> postorder() {
             List<Node>postorder = new LinkedList<>();
 

@@ -50,8 +50,4 @@ public class Token {
         return Element.parseConstant(value);
     }
 
-    public IR toIR(List<SymbolMap> symbolMaps, LinkedList<Integer> scope, Expression.Node node, Integer register) {
-        return new IR(symbolMaps.get(0));
-    }
-
 }

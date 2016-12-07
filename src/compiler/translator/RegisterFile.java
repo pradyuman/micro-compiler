@@ -94,8 +94,7 @@ public class RegisterFile {
             case FPARAM:
                 relativeStackAddress = 6 + var.getCtxVal() - 1; break;
             case RETURN:
-                // should be parameters
-                relativeStackAddress = 0; break;
+                relativeStackAddress = 5 + var.getCtxVal() + 1; break;
             default:
                 return;
         }

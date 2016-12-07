@@ -174,7 +174,7 @@ public class MicroCompiler extends MicroBaseListener {
 
         for (String s : ctx.getChild(1).getText().split(",")) {
             Element var = inFunction
-                    ? new Element(Element.Context.FLOCAL, flocalnum++, s, type)
+                    ? new FunctionLocal(flocalnum++, s, type)
                     : new Variable(s, type);
             lastMap().put(s, var);
         }
@@ -193,7 +193,7 @@ public class MicroCompiler extends MicroBaseListener {
         String rawtype = ctx.getChild(0).getText();
         Element.Type type = Element.Type.valueOf(rawtype);
 
-        Element fparam = new Element(Element.Context.FPARAM, 0, name, type);
+        Element fparam = new FunctionParameter(0, name, type);
         lastMap().put(name, fparam);
         deferParam.push(fparam);
     }

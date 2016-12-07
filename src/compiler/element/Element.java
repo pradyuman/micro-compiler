@@ -11,10 +11,9 @@ import java.util.List;
 
 @Data
 @AllArgsConstructor
-public class Element {
+public abstract class Element {
 
     private static String FLOCAL_PREFIX = "$L";
-    private static String FPARAM_PREFIX = "$P";
     private static String RETURN = "$R";
 
     public enum Type {
@@ -32,11 +31,6 @@ public class Element {
     private String value;
 
     public Element() {}
-
-    // FLOCAL FPARAM
-    public Element(Context ctx, int ctxVal, String name, Type type) {
-        this(ctx, ctxVal, name, type, null);
-    }
 
     @Override
     public String toString() {
@@ -72,23 +66,7 @@ public class Element {
         return ctx == Context.TEMPORARY;
     }
 
-    public String getRef() {
-        switch (ctx) {
-            case LABEL:
-            case VARIABLE:
-                return name;
-            case CONSTANT:
-                return value;
-            case FLOCAL:
-                return FLOCAL_PREFIX + ctxVal;
-            case FPARAM:
-                return FPARAM_PREFIX + ctxVal;
-            case RETURN:
-                return RETURN;
-            default:
-                throw new MicroRuntimeException(MicroErrorMessages.UnknownVariableContext);
-        }
-    }
+    public abstract String getRef();
 
     public static Element getScopedElement(List<SymbolMap> symbolMaps, LinkedList<Integer> scope, String id) {
         return scope.stream()

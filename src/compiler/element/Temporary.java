@@ -2,7 +2,7 @@ package compiler.element;
 
 public class Temporary extends Element {
 
-    private static String TEMP_PREFIX = "$T";
+    private static String PREFIX = "$T";
 
     public Temporary(int ctxVal) {
         super(Context.TEMPORARY, ctxVal, null, null, null);
@@ -14,6 +14,6 @@ public class Temporary extends Element {
 
     @Override
     public String getRef() {
-        return TEMP_PREFIX + getCtxVal();
+        return PREFIX + getCtxVal();
     }
 }

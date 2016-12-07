@@ -89,11 +89,13 @@ public class IR extends LinkedList<IR.Node> {
 
     }
 
-    public IR() {
-        super();
-    }
-
     SymbolMap globalSymbolMap;
+    int register;
+
+    public IR(SymbolMap globalSymbolMap) {
+        register = 0;
+        this.globalSymbolMap = globalSymbolMap;
+    }
 
     @Override
     public String toString() {

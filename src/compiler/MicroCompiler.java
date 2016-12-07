@@ -33,7 +33,7 @@ public class MicroCompiler extends MicroBaseListener {
     private int labelnum;
 
     // Tracks temporary registers
-    private int register;
+    private Integer register;
 
     // Intermediate Representation of program
     private IR ir;
@@ -63,7 +63,6 @@ public class MicroCompiler extends MicroBaseListener {
         this.blocknum = 1;
         this.labelnum = 1;
         this.register = 1;
-        this.ir = new IR();
         this.scope = new LinkedList<>();
         this.labelScope = new ArrayDeque<>();
         this.defer = new ArrayDeque<>();
@@ -84,7 +83,7 @@ public class MicroCompiler extends MicroBaseListener {
     public void enterPgm_body(MicroParser.Pgm_bodyContext ctx) {
         scope.push(0);
         symbolMaps.add(new SymbolMap(GLOBAL));
-        ir.setGlobalSymbolMap(lastMap());
+        this.ir = new IR(lastMap());
     }
 
     @Override
@@ -363,6 +362,7 @@ public class MicroCompiler extends MicroBaseListener {
         List<Token> infix = Expression.tokenizeExpr(expr, symbolMaps);
         List<Token> postfix = Expression.transformToPostfix(infix);
         Expression.Node tree = Expression.generateExpressionTree(postfix);
+        System.out.println(tree.toIR(symbolMaps, scope, register));
 
         // Expression is a single constant
         if (tree.getToken().isVar())
@@ -371,13 +371,7 @@ public class MicroCompiler extends MicroBaseListener {
         // Expression includes an operator
         tree.postorder().forEach(n -> {
             if (n.getToken().isFunction()) {
-                ir.add(new IR.Node(IR.Opcode.PUSH));
-                n.forEach(p -> ir.add(new IR.Node(IR.Opcode.PUSH, resolveENode(p))));
-                ir.add(new IR.Node(IR.Opcode.JSR,
-                        new Element(n.getToken().getValue(), Element.Type.STRING)));
-                n.forEach(p -> ir.add(new IR.Node(IR.Opcode.POP)));
-                ir.add(new IR.Node(IR.Opcode.POP,
-                        new Element(Element.Context.TEMP, register++, null, null)));
+                resolveFunction(n);
             }
 
             if (n.getToken().isOperator()) {

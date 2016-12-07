@@ -1,5 +1,7 @@
 package compiler.expression;
 
+import compiler.IR;
+import compiler.element.Element;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -8,6 +10,7 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import compiler.MicroErrorMessages;
 import compiler.MicroRuntimeException;
@@ -39,6 +42,25 @@ public final class Expression {
             forEach(n -> b.append(n.getToken() + " "));
             return b.toString();
         }
+
+        /*
+        public Element toElement(List<SymbolMap> symbolMaps, LinkedList<Integer> scope, IR ir, Integer register) {
+            if (token.isFunction()) {
+                IR funcIR = token.toIR(symbolMaps, scope, this, register);
+                ir.addAll(funcIR);
+                return funcIR.get(funcIR.size() - 1).getFocus();
+            }
+
+            Element el
+        }
+        */
+
+        public IR toIR(List<SymbolMap> symbolMaps, LinkedList<Integer> scope, Integer register) {
+            return postorder().stream()
+                    .flatMap(n -> n.getToken().toIR(symbolMaps, scope, n, register).stream())
+                    .collect(Collectors.toCollection(() -> new IR(symbolMaps.get(0))));
+        }
+
 
         public List<Node> postorder() {
             List<Node>postorder = new LinkedList<>();
@@ -97,7 +119,7 @@ public final class Expression {
 
             switch (t) {
                 case FUNCTION:
-                    list.add(new Token(t, s, func.getNumParam())); break;
+                    list.add(new Function(s, func.getNumParam())); break;
                 case OPERATOR:
                     list.add(new Operator(s)); break;
                 default:
@@ -178,7 +200,7 @@ public final class Expression {
                stack.push(n);
            } else if (t.isFunction()) {
                Node n = new Node(t);
-               IntStream.range(0, t.getNumParam())
+               IntStream.range(0, ((Function)t).getNumParam())
                        .forEach(__ -> n.addFirst(stack.pop()));
                stack.push(n);
             } else {

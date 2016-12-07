@@ -1,5 +1,6 @@
 package compiler.expression;
 
+import compiler.IR;
 import compiler.SymbolMap;
 import compiler.element.Element;
 import lombok.AllArgsConstructor;
@@ -20,11 +21,6 @@ public class Token {
 
     private Type type;
     private String value;
-    private int numParam;
-
-    public Token(Type type, String value) {
-        this(type, value, 0);
-    }
 
     public boolean isFunction() {
         return type == Type.FUNCTION;
@@ -52,6 +48,10 @@ public class Token {
             return el;
 
         return Element.parseConstant(value);
+    }
+
+    public IR toIR(List<SymbolMap> symbolMaps, LinkedList<Integer> scope, Expression.Node node, Integer register) {
+        return new IR(symbolMaps.get(0));
     }
 
 }

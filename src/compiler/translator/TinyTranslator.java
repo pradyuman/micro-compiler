@@ -159,8 +159,7 @@ public class TinyTranslator {
     }
 
     private IR transformIRtoTinyIR(IR ir, SymbolMap globalSymbolMap) {
-        IR tinyIR = new IR();
-        tinyIR.setGlobalSymbolMap(globalSymbolMap);
+        IR tinyIR = new IR(globalSymbolMap);
         RegisterFile rf = new RegisterFile(4);
 
         int localnum = 0;

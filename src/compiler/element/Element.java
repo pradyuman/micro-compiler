@@ -22,7 +22,7 @@ public class Element {
     }
 
     public enum Context {
-        NORMAL, CONSTANT, TEMPORARY, FLOCAL, FPARAM, RETURN
+        VARIABLE, CONSTANT, TEMPORARY, LABEL, LINK, FLOCAL, FPARAM, RETURN
     }
 
     private Context ctx;
@@ -33,22 +33,7 @@ public class Element {
 
     public Element() {}
 
-    // Element with value
-    public Element(String name, Type type, String value) {
-        this(Context.NORMAL, 0, name, type, value);
-    }
-
-    // Element with no value
-    public Element(String name, Type type) {
-        this(name, type, null);
-    }
-
-    // Link has ctxVal
-    public Element(int ctxVal, String name, Type type) {
-        this(Context.NORMAL, ctxVal, name, type);
-    }
-
-    // TEMP FLOCAL FPARAM RETURN
+    // FLOCAL FPARAM RETURN
     public Element(Context ctx, int ctxVal, String name, Type type) {
         this(ctx, ctxVal, name, type, null);
     }
@@ -57,7 +42,7 @@ public class Element {
     public String toString() {
         String s = String.format("type %s", type);
 
-        if (ctx != Context.NORMAL)
+        if (ctx != Context.VARIABLE)
             s += " context " + ctx;
 
         if (name != null)
@@ -89,7 +74,8 @@ public class Element {
 
     public String getRef() {
         switch (ctx) {
-            case NORMAL:
+            case LABEL:
+            case VARIABLE:
                 return name;
             case CONSTANT:
                 return value;

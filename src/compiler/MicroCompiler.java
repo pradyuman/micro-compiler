@@ -3,8 +3,7 @@ package compiler;
 import java.util.*;
 import java.util.stream.IntStream;
 
-import compiler.element.Element;
-import compiler.element.Temporary;
+import compiler.element.*;
 import compiler.expression.Expression;
 import compiler.expression.Operator;
 import compiler.expression.Token;
@@ -164,7 +163,7 @@ public class MicroCompiler extends MicroBaseListener {
     @Override
     public void enterString_decl(MicroParser.String_declContext ctx) {
         String name = ctx.getChild(1).getText();
-        Element var = new Element(name, Element.Type.STRING, ctx.getChild(3).getText());
+        Element var = new Variable(name, Element.Type.STRING, ctx.getChild(3).getText());
         symbolMaps.get(symbolMaps.size()-1).put(name, var);
     }
 
@@ -176,7 +175,7 @@ public class MicroCompiler extends MicroBaseListener {
         for (String s : ctx.getChild(1).getText().split(",")) {
             Element var = inFunction
                     ? new Element(Element.Context.FLOCAL, flocalnum++, s, type)
-                    : new Element(s, type);
+                    : new Variable(s, type);
             lastMap().put(s, var);
         }
     }
@@ -206,10 +205,7 @@ public class MicroCompiler extends MicroBaseListener {
         String name = ctx.getChild(2).getText();
         symbolMaps.add(new SymbolMap(name, true));
         scope.push(symbolMaps.size()-1);
-
-        ir.add(new IR.Node(
-                IR.Opcode.LABEL,
-                new Element(name, Element.Type.STRING)));
+        ir.add(new IR.Node(IR.Opcode.LABEL, new Label(name)));
 
         IR.Node link = new IR.Node(IR.Opcode.LINK);
         ir.add(link);
@@ -220,7 +216,7 @@ public class MicroCompiler extends MicroBaseListener {
     public void exitFunc_decl(MicroParser.Func_declContext ctx) {
         // Set LINK number (#local + #temp)
         defer.pop().setFocus(
-                new Element(flocalnum - 1, Integer.toString(flocalnum - 1 + register), Element.Type.STRING));
+                new Link(flocalnum - 1, register));
 
         scope.pop();
         inFunction = false;
@@ -334,7 +330,7 @@ public class MicroCompiler extends MicroBaseListener {
 
      private Element resolveLabel(int num) {
         String labelName = LABEL_PREFIX + num;
-        Element labelVar = new Element(labelName, Element.Type.STRING);
+        Element labelVar = new Label(labelName);
         IR.Node labelNode = new IR.Node(IR.Opcode.LABEL, labelVar);
         ir.add(labelNode);
         condLabelMap.put(labelName, labelNode);
@@ -342,7 +338,7 @@ public class MicroCompiler extends MicroBaseListener {
     }
 
     public void parseCond(ParseTree cond, String label, boolean opposite) {
-        Element target = new Element(label, Element.Type.STRING);
+        Element target = new Label(label);
 
         switch (cond.getText()) {
             case "TRUE":
@@ -413,7 +409,7 @@ public class MicroCompiler extends MicroBaseListener {
         ir.add(new IR.Node(IR.Opcode.PUSH));
         node.forEach(p -> ir.add(new IR.Node(IR.Opcode.PUSH, resolveENode(p))));
         ir.add(new IR.Node(IR.Opcode.JSR,
-                new Element(node.getToken().getValue(), Element.Type.STRING)));
+                new Label(node.getToken().getValue())));
         node.forEach(p -> ir.add(new IR.Node(IR.Opcode.POP)));
         ir.add(new IR.Node(IR.Opcode.POP,
                 new Temporary(register++)));

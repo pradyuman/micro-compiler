@@ -3,6 +3,7 @@ package compiler;
 import java.util.*;
 import java.util.stream.IntStream;
 
+import compiler.element.Element;
 import compiler.expression.Expression;
 import compiler.expression.Operator;
 import compiler.expression.Token;
@@ -47,7 +48,7 @@ public class MicroCompiler extends MicroBaseListener {
     private Deque<IR.Node> defer;
 
     // Defers function parameter naming
-    private Deque<Variable> deferParam;
+    private Deque<Element> deferParam;
 
     // Conditional label map to make ir node lookups easier when generating CFG
     private Map<String, IR.Node> condLabelMap;
@@ -77,13 +78,6 @@ public class MicroCompiler extends MicroBaseListener {
 
     private String nextBlockName() {
         return BLOCK + " " + blocknum++;
-    }
-
-    private Variable getScopedVariable(String id) {
-        return scope.stream()
-                .map(s -> symbolMaps.get(s).get(id))
-                .filter(s -> s != null)
-                .findFirst().orElse(null);
     }
 
     @Override
@@ -123,8 +117,8 @@ public class MicroCompiler extends MicroBaseListener {
         boolean converged = true;
         for (int i = ir.size() - 1; i >= 0; i--) {
             IR.Node node = ir.get(i);
-            Set<Variable> curIn = new LinkedHashSet<>(node.getIn());
-            Set<Variable> curOut = new LinkedHashSet<>(node.getOut());
+            Set<Element> curIn = new LinkedHashSet<>(node.getIn());
+            Set<Element> curOut = new LinkedHashSet<>(node.getOut());
 
             if (node.isRet() && i != ir.size() - 1)
                 symbolMaps.get(0).values().stream().forEach(node.getOut()::add);
@@ -135,7 +129,7 @@ public class MicroCompiler extends MicroBaseListener {
                     .forEach(node.getOut()::addAll);
 
             // Generate In
-            Set<Variable> outCopy = new HashSet<>(node.getOut());
+            Set<Element> outCopy = new HashSet<>(node.getOut());
             outCopy.removeAll(node.getKill());
             node.getIn().addAll(outCopy);
             node.getIn().addAll(node.getGen());
@@ -170,19 +164,19 @@ public class MicroCompiler extends MicroBaseListener {
     @Override
     public void enterString_decl(MicroParser.String_declContext ctx) {
         String name = ctx.getChild(1).getText();
-        Variable var = new Variable(name, Variable.Type.STRING, ctx.getChild(3).getText());
+        Element var = new Element(name, Element.Type.STRING, ctx.getChild(3).getText());
         symbolMaps.get(symbolMaps.size()-1).put(name, var);
     }
 
     @Override
     public void enterVar_decl(MicroParser.Var_declContext ctx) {
         String rawtype = ctx.getChild(0).getText();
-        Variable.Type type = Variable.Type.valueOf(rawtype);
+        Element.Type type = Element.Type.valueOf(rawtype);
 
         for (String s : ctx.getChild(1).getText().split(",")) {
-            Variable var = inFunction
-                    ? new Variable(Variable.Context.FLOCAL, flocalnum++, s, type)
-                    : new Variable(s, type);
+            Element var = inFunction
+                    ? new Element(Element.Context.FLOCAL, flocalnum++, s, type)
+                    : new Element(s, type);
             lastMap().put(s, var);
         }
     }
@@ -198,9 +192,9 @@ public class MicroCompiler extends MicroBaseListener {
     public void enterParam_decl(MicroParser.Param_declContext ctx) {
         String name = ctx.getChild(1).getText();
         String rawtype = ctx.getChild(0).getText();
-        Variable.Type type = Variable.Type.valueOf(rawtype);
+        Element.Type type = Element.Type.valueOf(rawtype);
 
-        Variable fparam = new Variable(Variable.Context.FPARAM, 0, name, type);
+        Element fparam = new Element(Element.Context.FPARAM, 0, name, type);
         lastMap().put(name, fparam);
         deferParam.push(fparam);
     }
@@ -215,7 +209,7 @@ public class MicroCompiler extends MicroBaseListener {
 
         ir.add(new IR.Node(
                 IR.Opcode.LABEL,
-                new Variable(name, Variable.Type.STRING)));
+                new Element(name, Element.Type.STRING)));
 
         IR.Node link = new IR.Node(IR.Opcode.LINK);
         ir.add(link);
@@ -225,7 +219,7 @@ public class MicroCompiler extends MicroBaseListener {
     @Override
     public void exitFunc_decl(MicroParser.Func_declContext ctx) {
         scope.pop();
-        defer.pop().setFocus(new Variable(flocalnum - 1, Integer.toString(flocalnum - 1), Variable.Type.STRING));
+        defer.pop().setFocus(new Element(flocalnum - 1, Integer.toString(flocalnum - 1), Element.Type.STRING));
         inFunction = false;
         flocalnum = 1;
         fparamnum = 0;
@@ -234,18 +228,18 @@ public class MicroCompiler extends MicroBaseListener {
 
     @Override
     public void enterAssign_expr(MicroParser.Assign_exprContext ctx) {
-        Variable var = getVariableSafely(ctx, ctx.getChild(0).getText());
-        Variable focus = parseExpr(ctx.getChild(2).getText());
-        IR.Opcode opcode = var.isInt() ? IR.Opcode.STOREI : IR.Opcode.STOREF;
-        ir.add(new IR.Node(opcode, focus, var));
+        Element el = getElementSafely(ctx, ctx.getChild(0).getText());
+        Element focus = parseExpr(ctx.getChild(2).getText());
+        IR.Opcode opcode = el.isInt() ? IR.Opcode.STOREI : IR.Opcode.STOREF;
+        ir.add(new IR.Node(opcode, focus, el));
     }
 
     @Override
     public void enterRead_stmt(MicroParser.Read_stmtContext ctx) {
         for (String s : ctx.getChild(2).getText().split(",")) {
-            Variable var = getVariableSafely(ctx, s);
-            IR.Opcode opcode = var.isInt() ? IR.Opcode.READI : IR.Opcode.READF;
-            ir.add(new IR.Node(opcode, var));
+            Element el = getElementSafely(ctx, s);
+            IR.Opcode opcode = el.isInt() ? IR.Opcode.READI : IR.Opcode.READF;
+            ir.add(new IR.Node(opcode, el));
         }
     }
 
@@ -253,7 +247,7 @@ public class MicroCompiler extends MicroBaseListener {
     public void enterWrite_stmt(MicroParser.Write_stmtContext ctx) {
         for (String s : ctx.getChild(2).getText().split(",")) {
             IR.Opcode opcode;
-            Variable var = getVariableSafely(ctx, s);
+            Element var = getElementSafely(ctx, s);
             switch (var.getType()) {
                 case INT:
                     opcode = IR.Opcode.WRITEI; break;
@@ -267,21 +261,21 @@ public class MicroCompiler extends MicroBaseListener {
         }
     }
 
-    private Variable getVariableSafely(ParserRuleContext ctx, String name) {
-        Variable var = getScopedVariable(name);
-        if (var == null) {
+    private Element getElementSafely(ParserRuleContext ctx, String name) {
+        Element e = Element.getScopedElement(symbolMaps, scope, name);
+        if (e == null) {
             String meta = " " + name + " (" + ctx.getStart().getLine() + ")";
             throw new MicroRuntimeException(MicroErrorMessages.UndefinedVariable + meta);
         }
-        return var;
+        return e;
     }
 
     @Override
     public void enterReturn_stmt(MicroParser.Return_stmtContext ctx) {
-        Variable focus = parseExpr(ctx.getChild(1).getText());
+        Element focus = parseExpr(ctx.getChild(1).getText());
         IR.Opcode opcode = focus.isInt() ? IR.Opcode.STOREI : IR.Opcode.STOREF;
         ir.add(new IR.Node(opcode, focus,
-                new Variable(Variable.Context.RETURN, fparamnum + 1, null, focus.getType())));
+                new Element(Element.Context.RETURN, fparamnum + 1, null, focus.getType())));
         ir.add(new IR.Node(IR.Opcode.RET));
     }
 
@@ -335,9 +329,9 @@ public class MicroCompiler extends MicroBaseListener {
         scope.pop();
     }
 
-     private Variable resolveLabel(int num) {
+     private Element resolveLabel(int num) {
         String labelName = LABEL_PREFIX + num;
-        Variable labelVar = new Variable(labelName, Variable.Type.STRING);
+        Element labelVar = new Element(labelName, Element.Type.STRING);
         IR.Node labelNode = new IR.Node(IR.Opcode.LABEL, labelVar);
         ir.add(labelNode);
         condLabelMap.put(labelName, labelNode);
@@ -345,7 +339,7 @@ public class MicroCompiler extends MicroBaseListener {
     }
 
     public void parseCond(ParseTree cond, String label, boolean opposite) {
-        Variable target = new Variable(label, Variable.Type.STRING);
+        Element target = new Element(label, Element.Type.STRING);
 
         switch (cond.getText()) {
             case "TRUE":
@@ -357,15 +351,15 @@ public class MicroCompiler extends MicroBaseListener {
                     ir.add(new IR.Node(IR.Opcode.JUMP, target));
                 break;
             default:
-                Variable left = parseExpr(cond.getChild(0).getText());
-                Variable right = parseExpr(cond.getChild(2).getText());
+                Element left = parseExpr(cond.getChild(0).getText());
+                Element right = parseExpr(cond.getChild(2).getText());
                 IR.Opcode opcode = IR.parseCompOp(cond.getChild(1).getText(), opposite);
                 ir.add(new IR.Node(opcode, left, right, target));
         }
     }
 
     // Returns last relevant variable on IR
-    public Variable parseExpr(String expr) {
+    public Element parseExpr(String expr) {
         List<Token> infix = Expression.tokenizeExpr(expr, symbolMaps);
         List<Token> postfix = Expression.transformToPostfix(infix);
         Expression.Node tree = Expression.generateExpressionTree(postfix);
@@ -380,20 +374,20 @@ public class MicroCompiler extends MicroBaseListener {
                 ir.add(new IR.Node(IR.Opcode.PUSH));
                 n.forEach(p -> ir.add(new IR.Node(IR.Opcode.PUSH, resolveENode(p))));
                 ir.add(new IR.Node(IR.Opcode.JSR,
-                        new Variable(n.getToken().getValue(), Variable.Type.STRING)));
+                        new Element(n.getToken().getValue(), Element.Type.STRING)));
                 n.forEach(p -> ir.add(new IR.Node(IR.Opcode.POP)));
                 ir.add(new IR.Node(IR.Opcode.POP,
-                        new Variable(Variable.Context.TEMP, register++, null, null)));
+                        new Element(Element.Context.TEMP, register++, null, null)));
             }
 
             if (n.getToken().isOperator()) {
                 Operator operator = (Operator)n.getToken();
                 operator.setRegister(register++);
 
-                Variable op1 = resolveENode(n.get(0));
-                Variable op2 = resolveENode(n.get(1));
-                Variable.Type exprType = op1.isFloat() || op2.isFloat() ? Variable.Type.FLOAT : Variable.Type.INT;
-                Variable result = new Variable(Variable.Context.TEMP, operator.getRegister(), null, exprType);
+                Element op1 = resolveENode(n.get(0));
+                Element op2 = resolveENode(n.get(1));
+                Element.Type exprType = op1.isFloat() || op2.isFloat() ? Element.Type.FLOAT : Element.Type.INT;
+                Element result = new Element(Element.Context.TEMP, operator.getRegister(), null, exprType);
                 ir.add(new IR.Node(IR.parseCalcOp(operator.getValue(), exprType), op1, op2, result));
             }
         });
@@ -401,50 +395,34 @@ public class MicroCompiler extends MicroBaseListener {
         return ir.get(ir.size() - 1).getFocus();
     }
 
-    private Variable resolveENode(Expression.Node node) {
+    private Element resolveENode(Expression.Node node) {
         if (node.getToken().isFunction())
             return resolveFunction(node);
 
-        Variable var = tokenToVariable(node.getToken());
-        if (var == null)
+        Element el = node.getToken().toElement(symbolMaps, scope);
+        if (el == null)
             throw new MicroRuntimeException(MicroErrorMessages.UndefinedVariable);
 
-        if (var.isConstant()) {
-            IR.Opcode opcode = var.isInt() ? IR.Opcode.STOREI : IR.Opcode.STOREF;
-            Variable temp = new Variable(Variable.Context.TEMP, register++, null, var.getType());
-            ir.add(new IR.Node(opcode, var, temp));
+        if (el.isConstant()) {
+            IR.Opcode opcode = el.isInt() ? IR.Opcode.STOREI : IR.Opcode.STOREF;
+            Element temp = new Element(Element.Context.TEMP, register++, null, el.getType());
+            ir.add(new IR.Node(opcode, el, temp));
             return temp;
         }
 
-        return var;
+        return el;
     }
 
-    private Variable resolveFunction(Expression.Node node) {
+    private Element resolveFunction(Expression.Node node) {
         ir.add(new IR.Node(IR.Opcode.PUSH));
         node.forEach(p -> ir.add(new IR.Node(IR.Opcode.PUSH, resolveENode(p))));
         ir.add(new IR.Node(IR.Opcode.JSR,
-                new Variable(node.getToken().getValue(), Variable.Type.STRING)));
+                new Element(node.getToken().getValue(), Element.Type.STRING)));
         node.forEach(p -> ir.add(new IR.Node(IR.Opcode.POP)));
         ir.add(new IR.Node(IR.Opcode.POP,
-                new Variable(Variable.Context.TEMP, register++, null, null)));
+                new Element(Element.Context.TEMP, register++, null, null)));
 
         return ir.get(ir.size() - 1).getFocus();
-    }
-
-    private Variable tokenToVariable(Token token) {
-        if (token.isOperator())
-            return new Variable(Variable.Context.TEMP, ((Operator)token).getRegister(), null, null);
-
-        return resolveId(token.getValue());
-    }
-
-    private Variable resolveId(String id) {
-        Variable var = getScopedVariable(id);
-
-        if (var == null)
-            var = Variable.parseConstant(id);
-
-        return var;
     }
 
 }

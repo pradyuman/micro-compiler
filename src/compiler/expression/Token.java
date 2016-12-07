@@ -1,7 +1,12 @@
 package compiler.expression;
 
+import compiler.SymbolMap;
+import compiler.element.Element;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+
+import java.util.LinkedList;
+import java.util.List;
 
 @Data
 @AllArgsConstructor
@@ -39,6 +44,14 @@ public class Token {
 
     public boolean isVar() {
         return type == Type.VAR;
+    }
+
+    public Element toElement(List<SymbolMap> symbolMaps, LinkedList<Integer> scope) {
+        Element el = Element.getScopedElement(symbolMaps, scope, value);
+        if (el != null)
+            return el;
+
+        return Element.parseConstant(value);
     }
 
 }

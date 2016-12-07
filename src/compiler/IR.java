@@ -1,5 +1,6 @@
 package compiler;
 
+import compiler.element.Element;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -27,15 +28,15 @@ public class IR extends LinkedList<IR.Node> {
     public static class Node {
 
         private Opcode opcode;
-        private Variable op1;
-        private Variable op2;
-        private Variable focus;
+        private Element op1;
+        private Element op2;
+        private Element focus;
         private Set<Node> predecessors;
         private Set<Node> successors;
-        private Set<Variable> gen;
-        private Set<Variable> kill;
-        private Set<Variable> in;
-        private Set<Variable> out;
+        private Set<Element> gen;
+        private Set<Element> kill;
+        private Set<Element> in;
+        private Set<Element> out;
 
         // LINK RET JUMP-DEFER PUSH POP
         public Node(Opcode opcode) {
@@ -43,16 +44,16 @@ public class IR extends LinkedList<IR.Node> {
         }
 
         // JUMP LABEL READI READF WRITEI WRITEF JSR
-        public Node(Opcode opcode, Variable focus) {
+        public Node(Opcode opcode, Element focus) {
             this(opcode, null, null, focus);
         }
 
         // STOREI STOREF
-        public Node(Opcode opcode, Variable op1, Variable focus) {
+        public Node(Opcode opcode, Element op1, Element focus) {
             this(opcode, op1, null, focus);
         }
 
-        public Node(Opcode opcode, Variable op1, Variable op2, Variable focus) {
+        public Node(Opcode opcode, Element op1, Element op2, Element focus) {
             this.opcode = opcode;
             this.op1 = op1;
             this.op2 = op2;
@@ -126,16 +127,16 @@ public class IR extends LinkedList<IR.Node> {
         return b.toString();
     }
 
-    public static Opcode parseCalcOp(String operator, Variable.Type type) {
+    public static Opcode parseCalcOp(String operator, Element.Type type) {
         switch (operator) {
             case "+":
-                return type == Variable.Type.INT ? Opcode.ADDI : Opcode.ADDF;
+                return type == Element.Type.INT ? Opcode.ADDI : Opcode.ADDF;
             case "-":
-                return type == Variable.Type.INT ? Opcode.SUBI : Opcode.SUBF;
+                return type == Element.Type.INT ? Opcode.SUBI : Opcode.SUBF;
             case "*":
-                return type == Variable.Type.INT ? Opcode.MULTI : Opcode.MULTF;
+                return type == Element.Type.INT ? Opcode.MULTI : Opcode.MULTF;
             case "/":
-                return type == Variable.Type.INT ? Opcode.DIVI : Opcode.DIVF;
+                return type == Element.Type.INT ? Opcode.DIVI : Opcode.DIVF;
             default:
                 throw new MicroRuntimeException(MicroErrorMessages.UnknownCalcOp);
         }

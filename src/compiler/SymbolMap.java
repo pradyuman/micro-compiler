@@ -1,5 +1,6 @@
 package compiler;
 
+import compiler.element.Element;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -8,7 +9,7 @@ import java.util.LinkedHashMap;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-public final class SymbolMap extends LinkedHashMap<String, Variable> {
+public final class SymbolMap extends LinkedHashMap<String, Element> {
 
     private final String name;
     private final boolean function;
@@ -35,7 +36,7 @@ public final class SymbolMap extends LinkedHashMap<String, Variable> {
     }
 
     @Override
-    public Variable put(String name, Variable v) {
+    public Element put(String name, Element v) {
         if (containsKey(v.getName())) {
             throw new MicroRuntimeException(MicroErrorMessages.DuplicateDeclaration + ": " + v.getName());
         }

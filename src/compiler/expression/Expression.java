@@ -80,19 +80,19 @@ public final class Expression {
         List<Token> list = new LinkedList<>();
 
         for (String s : expr.split("(?<=op)|(?=op)".replace("op", compiler.expression.Token.calcop))) {
-            Token.Type t = compiler.expression.Token.Type.VAR;
+            Token.Type t = Token.Type.VAR;
             SymbolMap func = symbolMaps.stream().filter(m -> m.getName().equals(s)).findFirst().orElse(null);
 
             if (s.equals("(")) {
-                t = compiler.expression.Token.Type.LPAREN;
+                t = Token.Type.LPAREN;
             } else if (s.equals(")")) {
-                t = compiler.expression.Token.Type.RPAREN;
+                t = Token.Type.RPAREN;
             } else if (s.equals(",")) {
-                t = compiler.expression.Token.Type.FSEPARATOR;
+                t = Token.Type.FSEPARATOR;
             } else if (s.matches(compiler.expression.Token.calcop)) {
-                t = compiler.expression.Token.Type.OPERATOR;
+                t = Token.Type.OPERATOR;
             } else if (func != null) {
-                t = compiler.expression.Token.Type.FUNCTION;
+                t = Token.Type.FUNCTION;
             }
 
             switch (t) {

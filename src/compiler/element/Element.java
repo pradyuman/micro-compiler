@@ -1,11 +1,17 @@
-package compiler;
+package compiler.element;
 
+import compiler.MicroErrorMessages;
+import compiler.MicroRuntimeException;
+import compiler.SymbolMap;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
+import java.util.LinkedList;
+import java.util.List;
+
 @Data
 @AllArgsConstructor
-public final class Variable {
+public final class Element {
 
     private static String FLOCAL_PREFIX = "$L";
     private static String FPARAM_PREFIX = "$P";
@@ -27,27 +33,27 @@ public final class Variable {
     private String value;
 
     // Constant
-    public Variable(Type type, String value) {
+    public Element(Type type, String value) {
         this(Context.CONSTANT, 0, null, type, value);
     }
 
-    // Variable with value
-    public Variable(String name, Type type, String value) {
+    // Element with value
+    public Element(String name, Type type, String value) {
         this(Context.NORMAL, 0, name, type, value);
     }
 
-    // Variable with no value
-    public Variable(String name, Type type) {
+    // Element with no value
+    public Element(String name, Type type) {
         this(name, type, null);
     }
 
     // Link has ctxVal
-    public Variable(int ctxVal, String name, Type type) {
+    public Element(int ctxVal, String name, Type type) {
         this(Context.NORMAL, ctxVal, name, type);
     }
 
     // TEMP FLOCAL FPARAM RETURN
-    public Variable(Context ctx, int ctxVal, String name, Type type) {
+    public Element(Context ctx, int ctxVal, String name, Type type) {
         this(ctx, ctxVal, name, type, null);
     }
 
@@ -85,12 +91,12 @@ public final class Variable {
         return ctx == Context.TEMP;
     }
 
-    public static Variable parseConstant(String id) {
+    public static Element parseConstant(String id) {
         if (id.matches("[+-]?[0-9]+$"))
-            return new Variable(Variable.Type.INT, id);
+            return new Element(Element.Type.INT, id);
 
         if (id.matches("[+-]?([0-9]*[.])?[0-9]+"))
-            return new Variable(Variable.Type.FLOAT, id);
+            return new Element(Element.Type.FLOAT, id);
 
         return null;
     }
@@ -113,4 +119,12 @@ public final class Variable {
                 throw new MicroRuntimeException(MicroErrorMessages.UnknownVariableContext);
         }
     }
+
+    public static Element getScopedElement(List<SymbolMap> symbolMaps, LinkedList<Integer> scope, String id) {
+        return scope.stream()
+                .map(s -> symbolMaps.get(s).get(id))
+                .filter(s -> s != null)
+                .findFirst().orElse(null);
+    }
+
 }

@@ -10,7 +10,7 @@ import compiler.IR;
 import compiler.MicroErrorMessages;
 import compiler.MicroRuntimeException;
 import compiler.SymbolMap;
-import compiler.Variable;
+import compiler.element.Element;
 
 public class TinyTranslator {
 
@@ -166,7 +166,7 @@ public class TinyTranslator {
         int localnum = 0;
         for (IR.Node n : ir) {
             RegisterFile.Register rx, ry, rz;
-            Variable tOp1 = n.getOp1(), tOp2 = n.getOp2(), tFocus = n.getFocus();
+            Element tOp1 = n.getOp1(), tOp2 = n.getOp2(), tFocus = n.getFocus();
             if (n.getOpcode() == IR.Opcode.LINK)
                 localnum = n.getFocus().getCtxVal();
 
@@ -174,18 +174,18 @@ public class TinyTranslator {
                 if (n.getOp1() != null && !n.getOp1().isConstant()) {
                     rx = rf.ensure(n.getOp1(), n, tinyIR, localnum);
                     rf.free(n.getOp1(), rx, tinyIR, n.getOut(), localnum, false);
-                    tOp1 = new Variable(Variable.Context.TEMP, rx.getId(), null, null);
+                    tOp1 = new Element(Element.Context.TEMP, rx.getId(), null, null);
                 }
 
                 if (n.getOp2() != null && !n.getOp2().isConstant()) {
                     ry = rf.ensure(n.getOp2(), n, tinyIR, localnum);
                     rf.free(n.getOp1(), ry, tinyIR, n.getOut(), localnum, false);
-                    tOp2 = new Variable(Variable.Context.TEMP, ry.getId(), null, null);
+                    tOp2 = new Element(Element.Context.TEMP, ry.getId(), null, null);
                 }
 
                 if (n.getFocus() != null && !CompSet.contains(n.getOpcode())) {
                     rz = rf.ensure(n.getFocus(), n, tinyIR, localnum);
-                    tFocus = new Variable(Variable.Context.TEMP, rz.getId(), null, null);
+                    tFocus = new Element(Element.Context.TEMP, rz.getId(), null, null);
                 }
             }
 
@@ -206,14 +206,14 @@ public class TinyTranslator {
         throw new MicroRuntimeException(MicroErrorMessages.UnknownIRNodeType);
     }
 
-    private String resolveComp(Variable op1, Variable op2) {
+    private String resolveComp(Element op1, Element op2) {
         if ((op1 != null && op1.isFloat()) || (op2 != null && op2.isFloat()))
             return "cmpr";
         else
             return "cmpi";
     }
 
-    private String resolveOp(Variable op) {
+    private String resolveOp(Element op) {
         if (op == null)
             return null;
 

@@ -3,7 +3,7 @@ package compiler.translator;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import compiler.IR;
-import compiler.Variable;
+import compiler.element.Element;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,7 +16,7 @@ public class RegisterFile {
     @AllArgsConstructor
     public static class Register {
         private int id;
-        private Variable value;
+        private Element value;
         private boolean dirty;
     }
 
@@ -27,7 +27,7 @@ public class RegisterFile {
         IntStream.range(0, num).forEach(i -> file.add(new Register(i, null, false)));
     }
 
-    public Register ensure(Variable var, IR.Node node, IR tinyIR, int localCount) {
+    public Register ensure(Element var, IR.Node node, IR tinyIR, int localCount) {
         Register r = get(var);
         if (r != null)
             return r;
@@ -35,7 +35,7 @@ public class RegisterFile {
         return allocate(var, node, tinyIR, localCount, true);
     }
 
-    public Register allocate(Variable var, IR.Node node, IR tinyIR, int localCount, boolean load) {
+    public Register allocate(Element var, IR.Node node, IR tinyIR, int localCount, boolean load) {
         Register notDirty = file.stream()
                 .filter(r -> !r.isDirty())
                 .findFirst().orElse(null);
@@ -61,7 +61,7 @@ public class RegisterFile {
         }).findFirst().orElse(null);
     }
 
-    public void free(Variable var, Register r, IR tinyIR, Set<Variable> liveSet, int localCount, boolean load) {
+    public void free(Element var, Register r, IR tinyIR, Set<Element> liveSet, int localCount, boolean load) {
         if (r.getValue() == null)
             return;
 
@@ -73,14 +73,14 @@ public class RegisterFile {
             move(var, r, tinyIR, localCount, load);
     }
 
-    private Register get(Variable var) {
+    private Register get(Element var) {
         return file.stream()
                 .filter(r -> r.getValue() != null)
                 .filter(r -> r.getValue().getRef().equals(var.getRef()))
                 .findFirst().orElse(null);
     }
 
-    private void move(Variable var, Register r, IR tinyIR, int localCount, boolean load) {
+    private void move(Element var, Register r, IR tinyIR, int localCount, boolean load) {
         IR.Opcode opcode = r.getValue().isInt() ? IR.Opcode.STOREI : IR.Opcode.STOREF;
 
         // local, param, temp
@@ -99,7 +99,7 @@ public class RegisterFile {
                 return;
         }
 
-        Variable temp = new Variable(Variable.Context.TEMP, relativeStackAddress, null, var.getType());
+        Element temp = new Element(Element.Context.TEMP, relativeStackAddress, null, var.getType());
         if (load)
             tinyIR.add(new IR.Node(opcode, temp, var));
         else

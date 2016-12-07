@@ -1,8 +1,13 @@
 package compiler.expression;
 
+import compiler.SymbolMap;
+import compiler.element.Element;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
+
+import java.util.LinkedList;
+import java.util.List;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
@@ -20,5 +25,10 @@ public final class Operator extends Token {
 
     public boolean isHigherPrecedence(Operator t) {
         return precedence > t.getPrecedence();
+    }
+
+    @Override
+    public Element toElement(List<SymbolMap> symbolMaps, LinkedList<Integer> scope) {
+        return new Element(Element.Context.TEMP, register, null, null);
     }
 }

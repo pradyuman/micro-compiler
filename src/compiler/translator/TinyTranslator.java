@@ -39,7 +39,7 @@ public class TinyTranslator {
         _dict.put(IR.Opcode.JSR, "jsr");
         _dict.put(IR.Opcode.PUSH, "push");
         _dict.put(IR.Opcode.POP, "pop");
-        _dict.put(IR.Opcode.RET, "ret");
+        _dict.put(IR.Opcode.RETURN, "ret");
         _dict.put(IR.Opcode.LINK, "link");
         _dict.put(IR.Opcode.READI, "sys readi");
         _dict.put(IR.Opcode.READF, "sys readr");
@@ -195,7 +195,7 @@ public class TinyTranslator {
         if (StoreSet.contains(opcode)) return Type.STORE;
         if (GenericSet.contains(opcode)) return Type.GENERIC;
         if (opcode == IR.Opcode.JSR) return Type.JSR;
-        if (opcode == IR.Opcode.RET) return Type.RET;
+        if (opcode == IR.Opcode.RETURN) return Type.RET;
 
         throw new MicroRuntimeException(MicroErrorMessages.UnknownIRNodeType);
     }
@@ -221,8 +221,9 @@ public class TinyTranslator {
             case FLOCAL:
                 return "$" + Integer.toString(-op.getCtxVal());
             case FPARAM:
-            case RETURN:
                 return "$" + Integer.toString(STACK + op.getCtxVal());
+            case RETURN:
+                return "$" + Integer.toString(STACK + op.getCtxVal() + 1);
             default:
                 return op.getRef();
         }

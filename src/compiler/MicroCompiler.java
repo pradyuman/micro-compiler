@@ -106,7 +106,7 @@ public class MicroCompiler extends MicroBaseListener {
                     resolveCFGInfo(node, target);
             } else if (node.isJump()) {
                 resolveCFGInfo(node, getCFTarget(node));
-            } else if (!node.isRet()) {
+            } else if (!node.isReturn()) {
                 resolveCFGInfo(node, next);
             }
         });
@@ -119,7 +119,7 @@ public class MicroCompiler extends MicroBaseListener {
             Set<Element> curIn = new LinkedHashSet<>(node.getIn());
             Set<Element> curOut = new LinkedHashSet<>(node.getOut());
 
-            if (node.isRet() && i != ir.size() - 1)
+            if (node.isReturn() && i != ir.size() - 1)
                 symbolMaps.get(0).values().stream().forEach(node.getOut()::add);
 
             // Generate Out
@@ -273,9 +273,8 @@ public class MicroCompiler extends MicroBaseListener {
     public void enterReturn_stmt(MicroParser.Return_stmtContext ctx) {
         Element focus = parseExpr(ctx.getChild(1).getText());
         IR.Opcode opcode = focus.isInt() ? IR.Opcode.STOREI : IR.Opcode.STOREF;
-        ir.add(new IR.Node(opcode, focus,
-                new Element(Element.Context.RETURN, fparamnum + 1, null, focus.getType())));
-        ir.add(new IR.Node(IR.Opcode.RET));
+        ir.add(new IR.Node(opcode, focus, new Return(fparamnum, focus.getType())));
+        ir.add(new IR.Node(IR.Opcode.RETURN));
     }
 
     @Override
@@ -300,7 +299,7 @@ public class MicroCompiler extends MicroBaseListener {
         symbolMaps.add(new SymbolMap(nextBlockName()));
         scope.push(symbolMaps.size() - 1);
 
-        if (!ir.get(ir.size()-1).isRet())
+        if (!ir.get(ir.size()-1).isReturn())
             ir.add(defer.peek());
 
         resolveLabel(labelScope.pop());

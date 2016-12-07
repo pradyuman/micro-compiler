@@ -15,7 +15,7 @@ public class IR extends LinkedList<IR.Node> {
     public enum Opcode {
         ADDI, ADDF, SUBI, SUBF, MULTI, MULTF, DIVI, DIVF,
         STOREI, STOREF, GT, GE, LT, LE, NE, EQ,
-        JUMP, LABEL, JSR, PUSH, POP, RET, LINK,
+        JUMP, LABEL, JSR, PUSH, POP, RETURN, LINK,
         READI, READF, WRITEI, WRITEF, WRITES
     }
 
@@ -83,8 +83,8 @@ public class IR extends LinkedList<IR.Node> {
             return opcode == Opcode.JUMP;
         }
 
-        public boolean isRet() {
-            return opcode == Opcode.RET;
+        public boolean isReturn() {
+            return opcode == Opcode.RETURN;
         }
 
     }

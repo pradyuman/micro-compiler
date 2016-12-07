@@ -33,7 +33,7 @@ public class Element {
 
     public Element() {}
 
-    // FLOCAL FPARAM RETURN
+    // FLOCAL FPARAM
     public Element(Context ctx, int ctxVal, String name, Type type) {
         this(ctx, ctxVal, name, type, null);
     }

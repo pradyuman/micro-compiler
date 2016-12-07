@@ -7,6 +7,11 @@ public class Label extends Element {
     }
 
     @Override
+    public String toString() {
+        return getCtx() + " " + getRef();
+    }
+
+    @Override
     public String getRef() {
         return getName();
     }

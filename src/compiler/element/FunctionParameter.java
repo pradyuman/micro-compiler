@@ -9,6 +9,11 @@ public class FunctionParameter extends Element {
     }
 
     @Override
+    public String toString() {
+        return getRef() + " (" + getType() + " " + getName() + ")";
+    }
+
+    @Override
     public String getRef() {
         return PREFIX + getCtxVal();
     }

@@ -88,8 +88,8 @@ public class MicroCompiler extends MicroBaseListener {
 
     @Override
     public void exitPgm_body(MicroParser.Pgm_bodyContext ctx) {
-        generateCFG();
-        while (!generateInAndOut());
+        //generateCFG();
+        //while (!generateInAndOut());
         System.out.println(ir);
         TinyTranslator tt = new TinyTranslator();
         tt.printTinyFromIR(symbolMaps.get(0), ir);
@@ -215,9 +215,7 @@ public class MicroCompiler extends MicroBaseListener {
     @Override
     public void exitFunc_decl(MicroParser.Func_declContext ctx) {
         // Set LINK number (#local + #temp)
-        defer.pop().setFocus(
-                new Link(flocalnum - 1, register));
-
+        defer.pop().setFocus(new Link(flocalnum - 1, register));
         scope.pop();
         inFunction = false;
         flocalnum = 1;
@@ -407,12 +405,9 @@ public class MicroCompiler extends MicroBaseListener {
     private Element resolveFunction(Expression.Node node) {
         ir.add(new IR.Node(IR.Opcode.PUSH));
         node.forEach(p -> ir.add(new IR.Node(IR.Opcode.PUSH, resolveENode(p))));
-        ir.add(new IR.Node(IR.Opcode.JSR,
-                new Label(node.getToken().getValue())));
+        ir.add(new IR.Node(IR.Opcode.JSR, new Label(node.getToken().getValue())));
         node.forEach(p -> ir.add(new IR.Node(IR.Opcode.POP)));
-        ir.add(new IR.Node(IR.Opcode.POP,
-                new Temporary(register++)));
-
+        ir.add(new IR.Node(IR.Opcode.POP, new Temporary(register++)));
         return ir.get(ir.size() - 1).getFocus();
     }
 

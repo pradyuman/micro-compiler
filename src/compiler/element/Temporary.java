@@ -13,6 +13,11 @@ public class Temporary extends Element {
     }
 
     @Override
+    public String toString() {
+        return getType() != null ? getRef() + " (" + getType() + ")" : getRef();
+    }
+
+    @Override
     public String getRef() {
         return PREFIX + getCtxVal();
     }

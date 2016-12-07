@@ -12,6 +12,11 @@ public class Link extends Element {
     }
 
     @Override
+    public String toString() {
+        return getCtx() + " " + getRef() + " (L: " + numLocal + ", T: " + numTemp + ")";
+    }
+
+    @Override
     public String getRef() {
         return String.valueOf(numLocal + numTemp);
     }

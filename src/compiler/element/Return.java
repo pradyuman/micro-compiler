@@ -7,6 +7,11 @@ public class Return extends Element {
     }
 
     @Override
+    public String toString() {
+        return getRef() + " (P: " + getCtxVal() + "}";
+    }
+
+    @Override
     public String getRef() {
         return "$R";
     }

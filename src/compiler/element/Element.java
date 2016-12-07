@@ -13,9 +13,6 @@ import java.util.List;
 @AllArgsConstructor
 public abstract class Element {
 
-    private static String FLOCAL_PREFIX = "$L";
-    private static String RETURN = "$R";
-
     public enum Type {
         INT, FLOAT, STRING
     }
@@ -31,20 +28,6 @@ public abstract class Element {
     private String value;
 
     public Element() {}
-
-    @Override
-    public String toString() {
-        String s = String.format("type %s", type);
-
-        if (ctx != Context.VARIABLE)
-            s += " context " + ctx;
-
-        if (name != null)
-            s += " name " + name;
-
-        return s + " ref " + getRef();
-        //return getRef();
-    }
 
     public boolean isConstant() {
         return ctx == Context.CONSTANT;

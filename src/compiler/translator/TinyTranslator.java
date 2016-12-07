@@ -101,7 +101,7 @@ public class TinyTranslator {
         // Init Main
         System.out.println("push");
         pushReg();
-        System.out.println("jsr compiler");
+        System.out.println("jsr main");
         System.out.println("sys halt");
 
         ir.forEach(n -> {

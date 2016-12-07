@@ -17,6 +17,11 @@ public class Constant extends Element {
     }
 
     @Override
+    public String toString() {
+        return getRef() + " (" + getType() + ")";
+    }
+
+    @Override
     public String getRef() {
         return getValue();
     }

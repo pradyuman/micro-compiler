@@ -88,9 +88,14 @@ public class MicroCompiler extends MicroBaseListener {
 
     @Override
     public void exitPgm_body(MicroParser.Pgm_bodyContext ctx) {
+        IR.Node lastNode = ir.get(ir.size() - 1);
+        if (!lastNode.isReturn())
+            ir.add(new IR.Node(IR.Opcode.RETURN));
+
+        System.out.println(ir);
         generateCFG();
+        // Wait for convergence
         while (!generateInAndOut());
-        System.out.println(ir.setsToString());
         TinyTranslator tt = new TinyTranslator();
         tt.printTinyFromIR(symbolMaps.get(0), ir);
     }

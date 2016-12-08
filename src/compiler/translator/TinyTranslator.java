@@ -92,7 +92,6 @@ public class TinyTranslator {
         System.out.println(";tiny code");
 
         IR tinyIR = transformIRtoTinyIR(ir, globalSymbolMap);
-        System.out.println(tinyIR);
 
         globalSymbolMap.values().stream()
                 .map(e -> e.isString() ?
@@ -168,8 +167,6 @@ public class TinyTranslator {
         for (IR.Node n : ir) {
             Register rx = null, ry = null, rz = null;
             Element tOp1 = n.getOp1(), tOp2 = n.getOp2(), tFocus = n.getFocus();
-            System.out.println(n);
-            System.out.println(n.getOut());
 
             if (n.getOpcode() == IR.Opcode.LINK)
                 localCount = n.getFocus().getCtxVal();
@@ -208,8 +205,6 @@ public class TinyTranslator {
 
             IR.Node newNode = new IR.Node(n.getOpcode(), tOp1, tOp2, tFocus);
             tinyIR.add(newNode);
-
-            System.out.println();
         }
 
         return tinyIR;

@@ -176,7 +176,6 @@ public class IR extends LinkedList<IR.Node> {
     // Override to create gen and kill sets
     @Override
     public boolean add(IR.Node node) {
-        System.out.println(node);
         generateGenAndKill(node);
         return super.add(node);
     }

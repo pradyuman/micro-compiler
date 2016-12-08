@@ -54,8 +54,8 @@ public class RegisterFile {
 
     private Register chooseFree(IR.Node ins) {
         return file.stream().filter(r -> {
-            boolean op1Valid = ins.getOp1() == null || r.getData().getRef() != ins.getOp1().getRef();
-            boolean op2Valid = ins.getOp2() == null || r.getData().getRef() != ins.getOp2().getRef();
+            boolean op1Valid = ins.getOp1() == null || !r.getData().getRef().equals(ins.getOp1().getRef());
+            boolean op2Valid = ins.getOp2() == null || !r.getData().getRef().equals(ins.getOp2().getRef());
             return op1Valid && op2Valid;
         }).findFirst().orElse(null);
     }

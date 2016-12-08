@@ -17,4 +17,9 @@ public class FunctionParameter extends Element {
     public String getRef() {
         return PREFIX + getCtxVal();
     }
+
+    @Override
+    public Element getTinyElement(int localCount) {
+        return new Stack(5 + getCtxVal(), getType());
+    }
 }

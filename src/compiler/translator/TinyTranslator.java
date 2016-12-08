@@ -6,11 +6,13 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.IntStream;
 
+import com.sun.org.apache.bcel.internal.generic.PUSH;
 import compiler.IR;
 import compiler.MicroErrorMessages;
 import compiler.MicroRuntimeException;
 import compiler.SymbolMap;
 import compiler.element.Element;
+import compiler.element.Register;
 import compiler.element.Temporary;
 
 public class TinyTranslator {
@@ -73,24 +75,22 @@ public class TinyTranslator {
     );
 
     private static EnumSet<IR.Opcode> IgnoreRASet = EnumSet.of(
-            IR.Opcode.LINK, IR.Opcode.LABEL, IR.Opcode.JSR
+            IR.Opcode.LINK, IR.Opcode.LABEL, IR.Opcode.JSR, IR.Opcode.JUMP, IR.Opcode.WRITES
     );
 
-    private int register;
+    //private int register;
     private Map<String, Integer> map;
 
     public TinyTranslator() {
-        this.register = -1;
+        //this.register = -1;
         this.map = new HashMap<>();
     }
 
     public void printTinyFromIR(SymbolMap globalSymbolMap, IR ir) {
         System.out.println(";tiny code");
 
-        /*
         IR tinyIR = transformIRtoTinyIR(ir, globalSymbolMap);
         System.out.println(tinyIR);
-        */
 
         globalSymbolMap.values().stream()
                 .map(e -> e.isString() ?
@@ -104,7 +104,7 @@ public class TinyTranslator {
         System.out.println("jsr main");
         System.out.println("sys halt");
 
-        ir.forEach(n -> {
+        tinyIR.forEach(n -> {
             String op1 = resolveOp(n.getOp1());
             String op2 = resolveOp(n.getOp2());
             String focus = resolveOp(n.getFocus());
@@ -118,15 +118,16 @@ public class TinyTranslator {
                         System.out.format("%s %s\n", command, focus);
                     break;
                 case CALC:
-                    System.out.format("move %s %s\n", op1, focus);
                     System.out.format("%s %s %s\n", command, op2, focus);
                     break;
                 case COMP:
                     String comp = resolveComp(n.getOp1(), n.getOp2());
+                    /*
                     if (!n.getOp2().isTemporary()) {
                         System.out.format("move %s r%s\n", op2, ++register);
                         op2 = "r" + register;
                     }
+                    */
                     System.out.format("%s %s %s\n", comp, op1, op2);
                     System.out.format("%s %s\n", command, focus);
                     break;
@@ -140,11 +141,14 @@ public class TinyTranslator {
                     System.out.println("ret");
                     break;
                 case STORE:
+                    /*
                     if (!n.getOp1().isTemporary() && !n.getFocus().isTemporary()) {
                         System.out.format("move %s r%s\n", op1, ++register);
                         op1 = "r" + register;
                     }
-                    System.out.format("move %s %s\n", op1, focus);
+                    */
+                    if (!(op1.equals(focus)))
+                        System.out.format("move %s %s\n", op1, focus);
                     break;
                 default:
                     throw new MicroRuntimeException(MicroErrorMessages.UnknownTinyType);
@@ -158,34 +162,49 @@ public class TinyTranslator {
         IR tinyIR = new IR(globalSymbolMap);
         RegisterFile rf = new RegisterFile(4);
 
-        int localnum = 0;
+        int localCount = 0;
         for (IR.Node n : ir) {
-            RegisterFile.Register rx, ry, rz;
+            Register rx = null, ry, rz;
             Element tOp1 = n.getOp1(), tOp2 = n.getOp2(), tFocus = n.getFocus();
+            System.out.println(n);
             if (n.getOpcode() == IR.Opcode.LINK)
-                localnum = n.getFocus().getCtxVal();
+                localCount = n.getFocus().getCtxVal();
 
             if (!IgnoreRASet.contains(n.getOpcode())) {
-                if (n.getOp1() != null && !n.getOp1().isConstant()) {
-                    rx = rf.ensure(n.getOp1(), n, tinyIR, localnum);
-                    rf.free(n.getOp1(), rx, tinyIR, n.getOut(), localnum, false);
-                    tOp1 = new Temporary(rx.getId());
+                if (tOp1 != null && !tOp1.isConstant()) {
+                    tOp1 = rx = rf.ensure(tOp1, n, tinyIR, localCount);
+                    if (!n.getOut().contains(n.getOp1()))
+                        rf.free(rx, tinyIR, n.getOut(), localCount);
                 }
 
-                if (n.getOp2() != null && !n.getOp2().isConstant()) {
-                    ry = rf.ensure(n.getOp2(), n, tinyIR, localnum);
-                    rf.free(n.getOp1(), ry, tinyIR, n.getOut(), localnum, false);
-                    tOp2 = new Temporary(ry.getId());
+                if (tOp2 != null && !tOp2.isConstant()) {
+                    tOp2 = ry = rf.ensure(tOp2, n, tinyIR, localCount);
+                    if (!n.getOut().contains(n.getOp2()))
+                        rf.free(ry, tinyIR, n.getOut(), localCount);
                 }
 
-                if (n.getFocus() != null && !CompSet.contains(n.getOpcode())) {
-                    rz = rf.ensure(n.getFocus(), n, tinyIR, localnum);
-                    tFocus = new Temporary(rz.getId());
+                if (CalcSet.contains(n.getOpcode())) {
+                    tFocus = rf.transfer(rx, tFocus, tinyIR, n.getOut(), localCount);
+                    rx.setDirty(true);
+                } else if (tFocus != null && n.getOpcode() == IR.Opcode.PUSH) {
+                    tFocus = rf.get(tFocus);
+                } else if (tFocus != null && tFocus.isReturn()) {
+                    tFocus = tFocus.getTinyElement(localCount);
+                } else if (tFocus != null && !CompSet.contains(n.getOpcode())) {
+                    tFocus = rz = rf.allocate(n.getFocus(), n, tinyIR, localCount);
+                    rz.setDirty(true);
                 }
             }
 
-            tinyIR.add(new IR.Node(n.getOpcode(), tOp1, tOp2, tFocus));
+            IR.Node newNode = new IR.Node(n.getOpcode(), tOp1, tOp2, tFocus);
+            tinyIR.add(newNode);
+
+            if (n.isLeader() || n.isReturn())
+                rf.flush(tinyIR, localCount);
+
+            System.out.println();
         }
+
         return tinyIR;
     }
 
@@ -214,10 +233,6 @@ public class TinyTranslator {
         switch (op.getCtx()) {
             case CONSTANT:
                 return op.getValue();
-            case TEMPORARY:
-                if (!map.containsKey(op.getRef()))
-                    map.put(op.getRef(), ++register);
-                return "r" + map.get(op.getRef());
             case FLOCAL:
                 return "$" + Integer.toString(-op.getCtxVal());
             case FPARAM:

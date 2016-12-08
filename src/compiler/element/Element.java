@@ -18,7 +18,8 @@ public abstract class Element {
     }
 
     public enum Context {
-        VARIABLE, CONSTANT, TEMPORARY, LABEL, LINK, FLOCAL, FPARAM, RETURN
+        VARIABLE, CONSTANT, TEMPORARY, REGISTER, STACK,
+        LABEL, LINK, FLOCAL, FPARAM, RETURN
     }
 
     private Context ctx;
@@ -45,11 +46,19 @@ public abstract class Element {
         return type == Type.STRING;
     }
 
+    public boolean isReturn() {
+        return ctx == Context.RETURN;
+    }
+
     public boolean isTemporary() {
         return ctx == Context.TEMPORARY;
     }
 
     public abstract String getRef();
+
+    public Element getTinyElement(int localCount) {
+        return this;
+    }
 
     public static Element getScopedElement(List<SymbolMap> symbolMaps, LinkedList<Integer> scope, String id) {
         return scope.stream()

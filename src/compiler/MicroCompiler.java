@@ -88,9 +88,8 @@ public class MicroCompiler extends MicroBaseListener {
 
     @Override
     public void exitPgm_body(MicroParser.Pgm_bodyContext ctx) {
-        //generateCFG();
-        //while (!generateInAndOut());
-        System.out.println(ir);
+        generateCFG();
+        while (!generateInAndOut());
         TinyTranslator tt = new TinyTranslator();
         tt.printTinyFromIR(symbolMaps.get(0), ir);
     }
@@ -102,7 +101,8 @@ public class MicroCompiler extends MicroBaseListener {
             if (node.isConditional()) {
                 resolveCFGInfo(node, next);
                 IR.Node target = getCFTarget(node);
-                if (next == null || !target.getFocus().getName().equals(next.getFocus().getName()))
+                // Resolve branch target
+                if (next == null || next.getFocus() == null || !target.getFocus().getName().equals(next.getFocus().getName()))
                     resolveCFGInfo(node, target);
             } else if (node.isJump()) {
                 resolveCFGInfo(node, getCFTarget(node));

@@ -21,4 +21,9 @@ public class Temporary extends Element {
     public String getRef() {
         return PREFIX + getCtxVal();
     }
+
+    @Override
+    public Element getTinyElement(int localCount) {
+        return new Stack(-(localCount + getCtxVal()), getType());
+    }
 }

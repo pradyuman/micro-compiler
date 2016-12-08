@@ -15,4 +15,9 @@ public class Return extends Element {
     public String getRef() {
         return "$R";
     }
+
+    @Override
+    public Element getTinyElement(int localCount) {
+        return new Stack(5 + getCtxVal() + 1, getType());
+    }
 }

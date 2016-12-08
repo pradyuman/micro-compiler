@@ -6,7 +6,6 @@ import compiler.element.Element;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.IntStream;
 
 public class RegisterFile {
@@ -36,13 +35,15 @@ public class RegisterFile {
         System.out.println("allocate " + el + " (" + node + ")");
         // Check if there is a free register in the register file and return that register
         Register r = file.stream()
-                .filter(reg -> !reg.isDirty())
+                .filter(reg -> reg.getData() == null)
                 .findFirst().orElse(null);
+
+        file.stream().forEach(System.out::println);
 
         // If there were no free registers, choose a register and free it
         if (r == null) {
             r = chooseFree(node);
-            free(r, tinyIR, node.getOut(), localCount);
+            free(r, tinyIR, node, localCount);
         }
 
         r.setData(el);
@@ -55,26 +56,24 @@ public class RegisterFile {
         return file.stream().filter(r -> {
             boolean op1Valid = ins.getOp1() == null || r.getData().getRef() != ins.getOp1().getRef();
             boolean op2Valid = ins.getOp2() == null || r.getData().getRef() != ins.getOp2().getRef();
-            boolean focusValid = ins.getFocus() == null || r.getData().getRef() != ins.getFocus().getRef();
-            return op1Valid && op2Valid && focusValid;
+            return op1Valid && op2Valid;
         }).findFirst().orElse(null);
     }
 
-    public void free(Register r, IR tinyIR, Set<Element> liveSet, int localCount) {
-        boolean live = liveSet.stream()
-                .map(v -> v.getRef())
-                .anyMatch(ref -> ref.equals(r.getData().getRef()));
+    public void free(Register r, IR tinyIR, IR.Node node, int localCount) {
+        boolean live = node.isElementLive(r.getData());
 
-        System.out.println("freeing " + r + ": " + liveSet + " isLive: " + live);
+        System.out.println("freeing " + r + ": " + node.getOut() + " isLive: " + live);
         //generate store if needed
         if (r.isDirty() && live)
             move(r, r.getData(), tinyIR, localCount);
 
+        r.setData(null);
         r.setDirty(false);
     }
 
-    public Register transfer(Register r, Element to, IR tinyIR, Set<Element> liveSet, int localCount) {
-        free(r, tinyIR, liveSet, localCount);
+    public Register transfer(Register r, Element to, IR tinyIR, IR.Node node, int localCount) {
+        free(r, tinyIR, node, localCount);
         r.setData(to);
         return r;
     }
@@ -101,6 +100,7 @@ public class RegisterFile {
                 .filter(r -> r.isDirty())
                 .forEach(r -> {
                     move(r, r.getData(), tinyIR, localCount);
+                    r.setData(null);
                     r.setDirty(false);
                 });
     }

@@ -75,6 +75,12 @@ public class IR extends LinkedList<IR.Node> {
             return s;
         }
 
+        public boolean isElementLive(Element el) {
+            return el != null && out.stream()
+                .map(v -> v.getRef())
+                .anyMatch(ref -> ref.equals(el.getRef()));
+        }
+
         public boolean isConditional() {
             return ConditionalSet.contains(opcode);
         }

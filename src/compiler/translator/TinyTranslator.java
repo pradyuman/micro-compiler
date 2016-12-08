@@ -6,14 +6,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.IntStream;
 
-import com.sun.org.apache.bcel.internal.generic.PUSH;
 import compiler.IR;
 import compiler.MicroErrorMessages;
 import compiler.MicroRuntimeException;
 import compiler.SymbolMap;
 import compiler.element.Element;
 import compiler.element.Register;
-import compiler.element.Temporary;
 
 public class TinyTranslator {
 
@@ -76,6 +74,10 @@ public class TinyTranslator {
 
     private static EnumSet<IR.Opcode> IgnoreRASet = EnumSet.of(
             IR.Opcode.LINK, IR.Opcode.LABEL, IR.Opcode.JSR, IR.Opcode.JUMP, IR.Opcode.WRITES
+    );
+
+    private static EnumSet<IR.Opcode> CheckRASet = EnumSet.of(
+            IR.Opcode.PUSH, IR.Opcode.WRITEI, IR.Opcode.WRITEF
     );
 
     //private int register;
@@ -164,30 +166,35 @@ public class TinyTranslator {
 
         int localCount = 0;
         for (IR.Node n : ir) {
-            Register rx = null, ry, rz;
+            Register rx = null, ry = null, rz = null;
             Element tOp1 = n.getOp1(), tOp2 = n.getOp2(), tFocus = n.getFocus();
             System.out.println(n);
+            System.out.println(n.getOut());
+
             if (n.getOpcode() == IR.Opcode.LINK)
                 localCount = n.getFocus().getCtxVal();
 
             if (!IgnoreRASet.contains(n.getOpcode())) {
-                if (tOp1 != null && !tOp1.isConstant()) {
-                    tOp1 = rx = rf.ensure(tOp1, n, tinyIR, localCount);
-                    if (!n.getOut().contains(n.getOp1()))
-                        rf.free(rx, tinyIR, n.getOut(), localCount);
-                }
+                boolean ensureOp1 = tOp1 != null && !tOp1.isConstant();
+                boolean ensureOp2 = tOp2 != null && !tOp2.isConstant();
 
-                if (tOp2 != null && !tOp2.isConstant()) {
+                if (ensureOp1)
+                    tOp1 = rx = rf.ensure(tOp1, n, tinyIR, localCount);
+
+                if (ensureOp2)
                     tOp2 = ry = rf.ensure(tOp2, n, tinyIR, localCount);
-                    if (!n.getOut().contains(n.getOp2()))
-                        rf.free(ry, tinyIR, n.getOut(), localCount);
-                }
+
+                if (ensureOp1 && !n.getOut().contains(n.getOp1()))
+                    rf.free(rx, tinyIR, n, localCount);
+
+                if (ensureOp2 && !n.getOut().contains(n.getOp2()))
+                    rf.free(ry, tinyIR, n, localCount);
 
                 if (CalcSet.contains(n.getOpcode())) {
-                    tFocus = rf.transfer(rx, tFocus, tinyIR, n.getOut(), localCount);
+                    tFocus = rf.transfer(rx, tFocus, tinyIR, n, localCount);
                     rx.setDirty(true);
-                } else if (tFocus != null && n.getOpcode() == IR.Opcode.PUSH) {
-                    tFocus = rf.get(tFocus);
+                } else if (tFocus != null && CheckRASet.contains(n.getOpcode())) {
+                    tFocus = rf.ensure(tFocus, n, tinyIR, localCount);
                 } else if (tFocus != null && tFocus.isReturn()) {
                     tFocus = tFocus.getTinyElement(localCount);
                 } else if (tFocus != null && !CompSet.contains(n.getOpcode())) {
@@ -196,11 +203,11 @@ public class TinyTranslator {
                 }
             }
 
+            if (n.isLeader())
+                rf.flush(tinyIR, localCount);
+
             IR.Node newNode = new IR.Node(n.getOpcode(), tOp1, tOp2, tFocus);
             tinyIR.add(newNode);
-
-            if (n.isLeader() || n.isReturn())
-                rf.flush(tinyIR, localCount);
 
             System.out.println();
         }

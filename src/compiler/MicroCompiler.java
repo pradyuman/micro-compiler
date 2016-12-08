@@ -90,6 +90,7 @@ public class MicroCompiler extends MicroBaseListener {
     public void exitPgm_body(MicroParser.Pgm_bodyContext ctx) {
         generateCFG();
         while (!generateInAndOut());
+        System.out.println(ir.setsToString());
         TinyTranslator tt = new TinyTranslator();
         tt.printTinyFromIR(symbolMaps.get(0), ir);
     }

@@ -50,6 +50,10 @@ public abstract class Element {
         return ctx == Context.RETURN;
     }
 
+    public boolean isTemporary() {
+        return ctx == Context.TEMPORARY;
+    }
+
     public abstract String getRef();
 
     public Element getTinyElement(int localCount) {

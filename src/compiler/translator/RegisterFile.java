@@ -24,7 +24,8 @@ public class RegisterFile {
 
         r = allocate(el, node, tinyIR, localCount);
         // generate load
-        move(el, r, tinyIR, localCount);
+        if (!el.isTemporary())
+            move(el, r, tinyIR, localCount);
         return r;
     }
 
@@ -42,7 +43,6 @@ public class RegisterFile {
 
         r.setData(el);
         r.setType(el.getType());
-
         return r;
     }
 
@@ -56,7 +56,6 @@ public class RegisterFile {
 
     public void free(Register r, IR tinyIR, IR.Node node, int localCount) {
         boolean live = node.isElementLive(r.getData());
-
         //generate store if needed
         if (r.isDirty() && live)
             move(r, r.getData(), tinyIR, localCount);

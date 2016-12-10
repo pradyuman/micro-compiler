@@ -11,7 +11,7 @@ OPERATOR : [+\-*/=<>(),;] | ':=' | '!=' | '<=' | '>=' ;
  
 IDENTIFIER : LETTER (LETTER | DIGIT)* {
     if (getText().length() > 32)
-        throw new MicroRuntimeException("Identifier is more than 30 characters");
+        throw new MicroRuntimeException("Identifier is more than 31 characters");
 };
 
 INTLITERAL : DIGIT+ ;

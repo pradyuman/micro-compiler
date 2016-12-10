@@ -97,7 +97,7 @@ public class MicroCompiler extends MicroBaseListener {
         // Wait for convergence
         while (!generateInAndOut());
         TinyTranslator tt = new TinyTranslator();
-        tt.printTinyFromIR(symbolMaps.get(0), ir);
+        tt.printTinyFromIR(symbolMaps, ir);
     }
 
     private void generateCFG() {

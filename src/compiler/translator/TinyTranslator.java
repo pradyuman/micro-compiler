@@ -1,9 +1,6 @@
 package compiler.translator;
 
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.IntStream;
 
 import compiler.IR;
@@ -80,15 +77,10 @@ public class TinyTranslator {
             IR.Opcode.PUSH, IR.Opcode.WRITEI, IR.Opcode.WRITEF
     );
 
-    //private int register;
-    private Map<String, Integer> map;
+    public TinyTranslator() {}
 
-    public TinyTranslator() {
-        //this.register = -1;
-        this.map = new HashMap<>();
-    }
-
-    public void printTinyFromIR(SymbolMap globalSymbolMap, IR ir) {
+    public void printTinyFromIR(List<SymbolMap> symbolMaps, IR ir) {
+        SymbolMap globalSymbolMap = symbolMaps.get(0);
         System.out.println(";tiny code");
 
         IR tinyIR = transformIRtoTinyIR(ir, globalSymbolMap);
@@ -98,6 +90,10 @@ public class TinyTranslator {
                         String.format("str %s %s", e.getName(), e.getValue()) :
                         String.format("var %s", e.getName()))
                 .forEach(System.out::println);
+
+        symbolMaps.stream().flatMap(m -> m.values().stream()).distinct()
+                .filter(e -> e.isString())
+                .forEach(e -> System.out.format("str %s %s\n", e.getName(), e.getValue()));
 
         // Init Main
         System.out.println("push");
@@ -123,12 +119,6 @@ public class TinyTranslator {
                     break;
                 case COMP:
                     String comp = resolveComp(n.getOp1(), n.getOp2());
-                    /*
-                    if (!n.getOp2().isTemporary()) {
-                        System.out.format("move %s r%s\n", op2, ++register);
-                        op2 = "r" + register;
-                    }
-                    */
                     System.out.format("%s %s %s\n", comp, op1, op2);
                     System.out.format("%s %s\n", command, focus);
                     break;
@@ -142,12 +132,6 @@ public class TinyTranslator {
                     System.out.println("ret");
                     break;
                 case STORE:
-                    /*
-                    if (!n.getOp1().isTemporary() && !n.getFocus().isTemporary()) {
-                        System.out.format("move %s r%s\n", op1, ++register);
-                        op1 = "r" + register;
-                    }
-                    */
                     if (!(op1.equals(focus)))
                         System.out.format("move %s %s\n", op1, focus);
                     break;
@@ -165,7 +149,7 @@ public class TinyTranslator {
 
         int localCount = 0;
         for (IR.Node n : ir) {
-            Register rx = null, ry = null, rz = null;
+            Register rx = null, ry = null, rz;
             Element tOp1 = n.getOp1(), tOp2 = n.getOp2(), tFocus = n.getFocus();
 
             if (n.getOpcode() == IR.Opcode.LINK)
@@ -231,19 +215,7 @@ public class TinyTranslator {
     private String resolveOp(Element op) {
         if (op == null)
             return null;
-
-        switch (op.getCtx()) {
-            case CONSTANT:
-                return op.getValue();
-            case FLOCAL:
-                return "$" + Integer.toString(-op.getCtxVal());
-            case FPARAM:
-                return "$" + Integer.toString(STACK + op.getCtxVal());
-            case RETURN:
-                return "$" + Integer.toString(STACK + op.getCtxVal() + 1);
-            default:
-                return op.getRef();
-        }
+        return op.getRef();
     }
 
     private void pushReg() {

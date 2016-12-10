@@ -9,11 +9,17 @@ KEYWORD
 
 OPERATOR : [+\-*/=<>(),;] | ':=' | '!=' | '<=' | '>=' ;
  
-IDENTIFIER : LETTER (LETTER | DIGIT)* ;
+IDENTIFIER : LETTER (LETTER | DIGIT)* {
+    if (getText().length() > 31)
+        throw new MicroRuntimeException("Identifier is more than 30 characters");
+};
 
 INTLITERAL : DIGIT+ ;
 FLOATLITERAL : DIGIT* DOT DIGIT+ ;
-STRINGLITERAL : DQ (EOS|.)*? DQ ;
+STRINGLITERAL : DQ (EOS|.)*? DQ {
+    if (getText().length() > 81)
+        throw new MicroRuntimeException("String literal is more than 80 characters");
+};
 
 WHITESPACE : [ \t\r\n]+ -> skip ;
 COMMENT : '--' ~[\r\n]* -> skip ;

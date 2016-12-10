@@ -24,8 +24,7 @@ public class RegisterFile {
 
         r = allocate(el, node, tinyIR, localCount);
         // generate load
-        if (!el.isTemporary())
-            move(el, r, tinyIR, localCount);
+        move(el, r, tinyIR, localCount);
         return r;
     }
 

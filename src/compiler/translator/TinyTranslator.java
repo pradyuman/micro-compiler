@@ -74,7 +74,7 @@ public class TinyTranslator {
     );
 
     private static EnumSet<IR.Opcode> CheckRASet = EnumSet.of(
-            IR.Opcode.PUSH, IR.Opcode.STOREI, IR.Opcode.STOREF, IR.Opcode.WRITEI, IR.Opcode.WRITEF
+            IR.Opcode.PUSH, IR.Opcode.WRITEI, IR.Opcode.WRITEF
     );
 
     public TinyTranslator() {}
@@ -179,6 +179,11 @@ public class TinyTranslator {
                     rx.setDirty(true);
                 } else if (tFocus != null && CheckRASet.contains(n.getOpcode())) {
                     tFocus = rf.ensure(tFocus, n, tinyIR, localCount);
+                } else if (tFocus != null && StoreSet.contains(n.getOpcode())) {
+                    tFocus = rz = rf.get(tFocus);
+                    if (tFocus == null)
+                        tFocus = rz = rf.allocate(n.getFocus(), n, tinyIR, localCount);
+                    rz.setDirty(true);
                 } else if (tFocus != null && tFocus.isReturn()) {
                     tFocus = tFocus.getTinyElement(localCount);
                 } else if (tFocus != null && !CompSet.contains(n.getOpcode())) {

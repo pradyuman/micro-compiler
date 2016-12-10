@@ -18,7 +18,7 @@ public class Link extends Element {
 
     @Override
     public String getRef() {
-        return String.valueOf(numLocal + numTemp);
+        return String.valueOf(numLocal + numTemp - 1);
     }
 
 }

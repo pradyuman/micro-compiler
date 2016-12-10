@@ -42,6 +42,7 @@ public class RegisterFile {
 
         r.setData(el);
         r.setType(el.getType());
+
         return r;
     }
 
@@ -64,6 +65,14 @@ public class RegisterFile {
         r.setDirty(false);
     }
 
+    public void freeAll() {
+        file.stream()
+                .forEach(r -> {
+                    r.setData(null);
+                    r.setDirty(false);
+                });
+    }
+
     public Register transfer(Register r, Element to, IR tinyIR, IR.Node node, int localCount) {
         free(r, tinyIR, node, localCount);
         r.setData(to);
@@ -81,8 +90,6 @@ public class RegisterFile {
         IR.Opcode opcode = from.isInt() ? IR.Opcode.STOREI : IR.Opcode.STOREF;
         tinyIR.add(new IR.Node(opcode, from.getTinyElement(localCount), to.getTinyElement(localCount)));
     }
-
-
 
     public void flush(IR tinyIR, int localCount) {
         file.stream()

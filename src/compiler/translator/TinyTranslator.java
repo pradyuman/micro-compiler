@@ -186,6 +186,9 @@ public class TinyTranslator {
             if (n.isLeader())
                 rf.flush(tinyIR, localCount);
 
+            if (n.isReturn())
+                rf.freeAll();
+
             IR.Node newNode = new IR.Node(n.getOpcode(), tOp1, tOp2, tFocus);
             tinyIR.add(newNode);
         }

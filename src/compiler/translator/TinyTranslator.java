@@ -179,13 +179,13 @@ public class TinyTranslator {
                     rx.setDirty(true);
                 } else if (tFocus != null && CheckRASet.contains(n.getOpcode())) {
                     tFocus = rf.ensure(tFocus, n, tinyIR, localCount);
+                } else if (tFocus != null && tFocus.isReturn()) {
+                    tFocus = tFocus.getTinyElement(localCount);
                 } else if (tFocus != null && StoreSet.contains(n.getOpcode())) {
                     tFocus = rz = rf.get(tFocus);
                     if (tFocus == null)
                         tFocus = rz = rf.allocate(n.getFocus(), n, tinyIR, localCount);
                     rz.setDirty(true);
-                } else if (tFocus != null && tFocus.isReturn()) {
-                    tFocus = tFocus.getTinyElement(localCount);
                 } else if (tFocus != null && !CompSet.contains(n.getOpcode())) {
                     tFocus = rz = rf.allocate(n.getFocus(), n, tinyIR, localCount);
                     rz.setDirty(true);

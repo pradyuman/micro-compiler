@@ -86,9 +86,8 @@ public class TinyTranslator {
         IR tinyIR = transformIRtoTinyIR(ir, globalSymbolMap);
 
         globalSymbolMap.values().stream()
-                .map(e -> e.isString() ?
-                        String.format("str %s %s", e.getName(), e.getValue()) :
-                        String.format("var %s", e.getName()))
+                .filter(e -> !e.isString())
+                .map(e -> String.format("var %s", e.getName()))
                 .forEach(System.out::println);
 
         symbolMaps.stream().flatMap(m -> m.values().stream()).distinct()

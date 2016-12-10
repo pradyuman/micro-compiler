@@ -13,11 +13,6 @@ public class Register extends Element {
     private Element data;
     private boolean dirty;
 
-    public Register(int id) {
-        super(Context.REGISTER, id, null, null, null);
-        this.id = id;
-    }
-
     public Register(int id, Element data, boolean dirty) {
         super(Context.REGISTER, id, null, null, null);
         this.id = id;

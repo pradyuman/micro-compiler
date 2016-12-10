@@ -106,6 +106,10 @@ public class TinyTranslator {
             String focus = resolveOp(n.getFocus());
             String command = dict.get(n.getOpcode());
 
+            // Add a "0" in front of any float value to resolve thins like .02 -> 0.02
+            if (n.getOpcode() == IR.Opcode.STOREF && n.getOp1().isConstant())
+                op1 = "0" + op1;
+
             switch(getType(n.getOpcode())) {
                 case GENERIC:
                     if (focus == null)

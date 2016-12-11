@@ -88,10 +88,6 @@ public class MicroCompiler extends MicroBaseListener {
 
     @Override
     public void exitPgm_body(MicroParser.Pgm_bodyContext ctx) {
-        IR.Node lastNode = ir.get(ir.size() - 1);
-        if (!lastNode.isReturn())
-            ir.add(new IR.Node(IR.Opcode.RETURN));
-
         System.out.println(ir);
         generateCFG();
         // Wait for convergence
@@ -220,6 +216,10 @@ public class MicroCompiler extends MicroBaseListener {
 
     @Override
     public void exitFunc_decl(MicroParser.Func_declContext ctx) {
+        IR.Node lastNode = ir.get(ir.size() - 1);
+        if (!lastNode.isReturn())
+            ir.add(new IR.Node(IR.Opcode.RETURN));
+
         // Set LINK number (#local + #temp)
         defer.pop().setFocus(new Link(flocalnum - 1, register));
         scope.pop();

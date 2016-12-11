@@ -10,7 +10,7 @@ KEYWORD
 OPERATOR : [+\-*/=<>(),;] | ':=' | '!=' | '<=' | '>=' ;
  
 IDENTIFIER : LETTER (LETTER | DIGIT)* {
-    if (getText().length() > 32)
+    if (getText().length() > 31)
         throw new MicroRuntimeException("Identifier is more than 31 characters");
 };
 
